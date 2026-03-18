@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FaST AID — Here For Your Safety</title>
+
+<!-- Firebase v10 (compat mode — works with GitHub Pages, no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- EmailJS for email notifications -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  FIREBASE + EMAILJS CONFIGURATION
+//  ─────────────────────────────────────────────────────────────────
+//  TO ACTIVATE: Replace the placeholder values below with your real
+//  Firebase project credentials (get them from Firebase Console →
+//  Project Settings → Your Apps → Web App → SDK setup).
+//
+//  QUICK SETUP GUIDE:
+//  1. Go to https://console.firebase.google.com
+//  2. Click "Add project" → name it "fast-aid" → Continue
+//  3. Click the </> Web icon → Register app → name it "fast-aid-web"
+//  4. Copy the firebaseConfig values and paste below
+//  5. In Firebase Console → Authentication → Sign-in method:
+//     Enable: Email/Password ✓  Google ✓
+//  6. In Firebase Console → Firestore Database → Create database
+//     (start in test mode for now)
+//  7. For EmailJS: go to https://emailjs.com → free account →
+//     Add Email Service → Gmail → get Service ID, Template ID, Public Key
+// ══════════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCAH7h3LhpcuOSnUcVe_TeGIHSMQ-5YuGs",
+  authDomain:        "fast-aid-1859e.firebaseapp.com",
+  projectId:         "fast-aid-1859e",
+  storageBucket:     "fast-aid-1859e.firebasestorage.app",
+  messagingSenderId: "690937382487",
+  appId:             "1:690937382487:web:4616f64dc3cd1f70600512",
+  measurementId:     "G-55TDH53ND2"
+};
+
+// EmailJS config (get from emailjs.com → free account)
+const EMAILJS_CONFIG = {
+  publicKey:   "YOUR_EMAILJS_PUBLIC_KEY",
+  serviceId:   "YOUR_EMAILJS_SERVICE_ID",
+  welcomeTemplate:  "YOUR_WELCOME_TEMPLATE_ID",
+  notifyTemplate:   "YOUR_NOTIFY_TEMPLATE_ID"
+};
+
+// ── Detect if real Firebase keys have been added ──
+const FIREBASE_ACTIVE = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+const EMAILJS_ACTIVE  = EMAILJS_CONFIG.publicKey !== "YOUR_EMAILJS_PUBLIC_KEY";
+
+let db = null, auth = null, fbApp = null;
+
+if (FIREBASE_ACTIVE) {
+  fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+  auth  = firebase.auth();
+  db    = firebase.firestore();
+  // Initialize Analytics
+  try { firebase.analytics(); console.log("📊 Firebase Analytics active"); } catch(e) {}
+  console.log("🔥 Firebase connected — Project: fast-aid-1859e");
+} else {
+  console.info("⚙️ Running in localStorage demo mode — Firebase keys needed for production.");
+}
+
+if (EMAILJS_ACTIVE) {
+  emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+  console.log("📧 EmailJS connected");
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bebas+Neue&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#16a34a;--gd:#15803d;--gl:#dcfce7;--gm:#bbf7d0;--g2:#22c55e;
+  --r:#dc2626;--rl:#fee2e2;--rd:#b91c1c;
+  --bg:#f8fafc;--dark:#0f172a;--card:#ffffff;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.1);
+  --radius:14px;--navh:68px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ===== NAV ===== */
+.nav{position:sticky;top:0;z-index:300;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:var(--navh);}
+.nav-inner{max-width:1300px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:100%;}
+
+/* LOGO */
+.logo{display:flex;align-items:center;gap:11px;cursor:pointer;text-decoration:none;flex-shrink:0;}
+.logo-mark{position:relative;width:44px;height:44px;flex-shrink:0;}
+.logo-mark svg{width:44px;height:44px;}
+.logo-text{display:flex;flex-direction:column;line-height:1;}
+.logo-name{font-family:'Outfit',sans-serif;font-weight:900;font-size:20px;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--g) 0%,#059669 50%,var(--g2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.logo-tag{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+
+/* Desktop Nav */
+.dnav{display:flex;align-items:center;gap:2px;}
+.ntab{padding:8px 14px;border-radius:10px;border:none;background:transparent;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;}
+.ntab:hover{background:var(--gl);color:var(--g);}
+.ntab.on{background:var(--gl);color:var(--g);font-weight:600;}
+.ntab.logout-btn{background:var(--r);color:#fff;padding:8px 16px;margin-left:4px;}
+.ntab.logout-btn:hover{background:var(--rd);}
+
+.nav-right{display:flex;align-items:center;gap:10px;}
+/* Profile avatar in nav */
+.nav-avatar{width:38px;height:38px;border-radius:50%;background:var(--gl);border:2px solid var(--g);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--g);transition:all .25s;overflow:hidden;position:relative;}
+.nav-avatar:hover{box-shadow:0 0 0 4px var(--gm);transform:scale(1.08);background:var(--gm);}
+.nav-avatar.logged-in{background:var(--g);color:#fff;border-color:var(--gd);}
+.nav-avatar.logged-in:hover{background:var(--gd);box-shadow:0 0 0 4px rgba(22,163,74,.3);}
+/* Hamburger */
+.ham{display:none;flex-direction:column;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 10px;cursor:pointer;transition:all .2s;}
+.ham span{display:block;width:18px;height:2px;background:var(--muted);border-radius:2px;transition:all .3s;}
+.ham:hover{border-color:var(--g);}
+.ham.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
+.ham.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.ham.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
+
+/* ===== MOBILE DRAWER ===== */
+.drawer-overlay{display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);}
+.drawer-overlay.on{display:block;}
+.drawer{position:fixed;top:0;right:-320px;bottom:0;width:300px;z-index:251;background:#fff;border-left:1px solid var(--border);transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:var(--shadow-lg);}
+.drawer.on{right:0;}
+.drawer-head{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.drawer-logo{display:flex;align-items:center;gap:8px;}
+.drawer-close{width:32px;height:32px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--muted);}
+.drawer-profile{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--gl);}
+.dp-avatar{width:48px;height:48px;border-radius:50%;background:#fff;border:2px solid var(--g);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:700;font-size:18px;color:var(--g);margin-bottom:8px;}
+.dp-name{font-weight:700;font-size:15px;color:var(--text);}
+.dp-email{font-size:12px;color:var(--muted);}
+.dp-signin{font-size:13px;color:var(--g);font-weight:600;cursor:pointer;}
+.drawer-nav{padding:12px;flex:1;overflow-y:auto;}
+.ditem{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:10px;cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;color:var(--muted);margin-bottom:3px;}
+.ditem:hover,.ditem.on{background:var(--gl);color:var(--g);}
+.ditem.on{font-weight:600;}
+.ditem .di{font-size:18px;width:24px;text-align:center;}
+.ditem.danger:hover{background:var(--rl);color:var(--r);}
+.drawer-foot{padding:16px 20px;border-top:1px solid var(--border);}
+
+/* ===== PROFILE DROPDOWN ===== */
+.prof-drop{position:absolute;top:calc(100% + 10px);right:0;width:280px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:400;display:none;overflow:hidden;animation:dropIn .2s ease;}
+.prof-drop.on{display:block;}
+@keyframes dropIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.pd-head{padding:18px;background:linear-gradient(135deg,var(--g),var(--gd));text-align:center;}
+.pd-av{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;color:#fff;}
+.pd-nm{font-weight:700;font-size:15px;color:#fff;}
+.pd-em{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px;}
+.pd-body{padding:12px;}
+.pd-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .2s;}
+.pd-link:hover{background:var(--bg);color:var(--text);}
+.pd-link.danger:hover{background:var(--rl);color:var(--r);}
+.pd-divider{height:1px;background:var(--border);margin:6px 0;}
+
+/* ===== VIEWS ===== */
+.view{display:none;}
+.view.on{display:block;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ===== HERO ===== */
+.hero-section{background:linear-gradient(135deg,var(--dark) 0%,#1a2744 50%,#162032 100%);position:relative;overflow:hidden;}
+.hero-section::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;border-radius:50%;background:rgba(22,163,74,.12);pointer-events:none;}
+.hero-section::after{content:'';position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;background:rgba(34,197,94,.07);pointer-events:none;}
+.hero-inner{max-width:1300px;margin:0 auto;padding:48px 20px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;position:relative;z-index:1;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(22,163,74,.25);border:1px solid rgba(34,197,94,.5);padding:5px 14px;border-radius:50px;font-size:12px;font-weight:600;color:#4ade80;margin-bottom:16px;letter-spacing:.5px;}
+.hero-badge .pulse{width:7px;height:7px;border-radius:50%;background:var(--g2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.hero h1{font-family:'Source Serif 4',serif;font-size:clamp(30px,5vw,48px);font-weight:700;color:#ffffff;line-height:1.1;letter-spacing:-0.5px;margin-bottom:14px;text-shadow:0 2px 12px rgba(0,0,0,.3);}
+.hero h1 em{font-style:italic;color:#4ade80;font-family:'Source Serif 4',serif;}
+.hero p{font-size:15px;color:#ffffff;line-height:1.7;max-width:520px;margin-bottom:24px;}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-sos{background:var(--r);color:#fff;border:none;padding:13px 24px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;box-shadow:0 4px 12px rgba(220,38,38,.35);}
+.btn-sos:hover{background:var(--rd);transform:translateY(-1px);box-shadow:0 6px 18px rgba(220,38,38,.4);}
+.btn-guide{background:var(--g);color:#fff;border:none;padding:13px 24px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;box-shadow:0 4px 12px rgba(22,163,74,.3);}
+.btn-guide:hover{background:var(--gd);transform:translateY(-1px);}
+.hero-stats{display:flex;gap:20px;margin-top:28px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat .hval{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;color:var(--g2);}
+.hstat .hlbl{font-size:11px;color:#e2e8f0;margin-top:2px;letter-spacing:.5px;text-transform:uppercase;}
+.hero-right-box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:24px;text-align:center;min-width:160px;}
+.big-cross{font-size:52px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(22,163,74,.5));}
+.hero-right-box p{font-size:12px;color:#e2e8f0;line-height:1.5;}
+
+/* ===== SEARCH ===== */
+.search-section{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:var(--navh);z-index:100;}
+.search-inner{max-width:1300px;margin:0 auto;padding:14px 20px;display:flex;gap:12px;align-items:center;}
+.search-box{flex:1;display:flex;align-items:center;gap:10px;background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:10px 16px;transition:border-color .2s;}
+.search-box:focus-within{border-color:var(--g);}
+.search-box input{flex:1;border:none;outline:none;font-size:14px;background:transparent;font-family:'DM Sans',sans-serif;color:var(--text);}
+.search-box input::placeholder{color:var(--muted);}
+.search-btn{background:var(--g);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s;font-family:'DM Sans',sans-serif;}
+.search-btn:hover{background:var(--gd);}
+
+/* ===== FILTERS ===== */
+.filter-section{max-width:1300px;margin:0 auto;padding:16px 20px 0;display:flex;gap:7px;flex-wrap:wrap;}
+.ftab{padding:7px 15px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.ftab:hover{border-color:var(--g);color:var(--g);}
+.ftab.on{background:var(--g);color:#fff;border-color:var(--g);}
+
+/* ===== MAIN CONTENT ===== */
+.main-wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.sec-title{font-family:'Source Serif 4',serif;font-size:19px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+.sec-count{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+
+
+/* ===== OFFLINE / ONLINE TOGGLE ===== */
+.mode-bar{max-width:1300px;margin:0 auto;padding:12px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.mode-toggle{display:flex;background:#fff;border:1.5px solid var(--border);border-radius:50px;padding:4px;gap:0;}
+.mtab{padding:7px 18px;border-radius:50px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.mtab.on{background:var(--g);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.mtab.offline-on{background:var(--dark);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.offline-badge{background:#1e293b;color:#94a3b8;font-size:11px;padding:3px 10px;border-radius:50px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:5px;}
+.offline-badge .dot-off{width:6px;height:6px;border-radius:50%;background:#94a3b8;}
+.offline-badge .dot-on{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+.offline-notice{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 18px;margin:0 20px 16px;max-width:1260px;margin-left:auto;margin-right:auto;display:none;align-items:center;gap:12px;font-size:13px;color:#94a3b8;}
+.offline-notice.show{display:flex;}
+.offline-notice strong{color:#e2e8f0;}
+.offline-notice .wifi-off{font-size:20px;}
+/* Offline card styling */
+.gcard.offline-card{border-color:#334155;background:#1e293b;}
+.gcard.offline-card .gc-title{color:#f1f5f9;}
+.gcard.offline-card .gc-time{color:#64748b;}
+.gcard.offline-card .gc-desc{color:#94a3b8;}
+.gcard.offline-card .btn-open{background:var(--dark);}
+.gcard.offline-card:hover{border-color:var(--g);background:#1e2d26;}
+
+/* ===== GUIDE CARDS ===== */
+.guides-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.gcard{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:9px;transition:all .25s;cursor:default;}
+.gcard:hover{border-color:var(--g);box-shadow:0 4px 20px rgba(22,163,74,.1);transform:translateY(-2px);}
+.gc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.gc-title{font-family:'IBM Plex Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+.gc-urgent{width:20px;height:20px;border-radius:50%;background:var(--rl);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.gc-time{font-size:11px;color:var(--muted);font-weight:500;}
+.gc-desc{font-size:13px;color:#475569;line-height:1.55;flex:1;}
+.gc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.gc-tag{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+.tag-bleed{background:#fee2e2;color:#dc2626;}
+.tag-burn{background:#fff7ed;color:#ea580c;}
+.tag-cardiac{background:#fef2f2;color:#dc2626;}
+.tag-choke{background:#fffbeb;color:#d97706;}
+.tag-frac{background:#eff6ff;color:#2563eb;}
+.tag-pois{background:#f5f3ff;color:#7c3aed;}
+.tag-ana{background:#fdf4ff;color:#a21caf;}
+.tag-wound{background:#f0fdf4;color:#16a34a;}
+.tag-heat{background:#fff7ed;color:#d97706;}
+.tag-drown{background:#eff6ff;color:#0284c7;}
+.tag-eye{background:#f0f9ff;color:#0369a1;}
+.tag-mental{background:#fdf4ff;color:#9333ea;}
+.tag-diab{background:#fefce8;color:#ca8a04;}
+.tag-bite{background:#fef2f2;color:#b91c1c;}
+.tag-elect{background:#fffbeb;color:#d97706;}
+.btn-open{background:var(--g);color:#fff;border:none;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%;transition:all .2s;font-family:'DM Sans',sans-serif;margin-top:2px;}
+.btn-open:hover{background:var(--gd);}
+.btn-open.urgent{background:var(--r);}
+.btn-open.urgent:hover{background:var(--rd);}
+
+/* ===== EMERGENCY STRIP ===== */
+.emer-strip{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid #fecaca;border-radius:var(--radius);padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 20px 32px;max-width:1260px;margin-left:auto;margin-right:auto;}
+.emer-left h3{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:var(--r);margin-bottom:3px;}
+.emer-left p{font-size:13px;color:#9f1239;}
+.emer-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-call{background:var(--r);color:#fff;border:none;padding:12px 22px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s;font-family:'Outfit',sans-serif;}
+.btn-call:hover{background:var(--rd);transform:translateY(-1px);}
+.btn-map{background:#fff;color:var(--r);border:2px solid var(--r);padding:11px 20px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s;font-family:'Outfit',sans-serif;}
+.btn-map:hover{background:var(--rl);}
+
+/* ===== GUIDE MODAL ===== */
+.modal-ov{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(4px);}
+.modal-ov.on{display:flex;}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:680px;margin:auto;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.25);}
+.modal-hdr{padding:22px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.modal-hdr.green-hdr{background:linear-gradient(135deg,var(--g),var(--gd));}
+.modal-hdr.red-hdr{background:linear-gradient(135deg,var(--r),var(--rd));}
+.modal-hdr.blue-hdr{background:linear-gradient(135deg,#1d4ed8,#1e40af);}
+.mh-title{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:#fff;line-height:1.2;}
+.mh-time{font-size:12px;color:rgba(255,255,255,.75);margin-top:4px;}
+.mh-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;}
+.mh-close:hover{background:rgba(255,255,255,.35);}
+.modal-warn{margin:18px 24px 0;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:13px;color:#92400e;display:flex;gap:8px;line-height:1.5;}
+.modal-body{padding:20px 24px;}
+.step-list{list-style:none;display:flex;flex-direction:column;gap:13px;}
+.step-item{display:flex;gap:13px;align-items:flex-start;}
+.step-num{width:28px;height:28px;border-radius:8px;background:var(--g);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-family:'Outfit',sans-serif;}
+.step-num.red{background:var(--r);}
+.step-txt{font-size:14px;color:var(--text);line-height:1.65;padding-top:3px;font-family:'IBM Plex Sans',sans-serif;}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-between;align-items:center;}
+.btn-save{background:var(--gl);color:var(--g);border:1.5px solid var(--gm);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.btn-save:hover{background:var(--gm);}
+.btn-done{background:var(--g);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.btn-done:hover{background:var(--gd);}
+
+/* ===== AUTH MODAL ===== */
+.auth-modal{background:#fff;border-radius:18px;width:100%;max-width:420px;margin:auto;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.25);}
+.auth-hdr{background:linear-gradient(135deg,var(--g),var(--gd));padding:24px;text-align:center;position:relative;}
+.auth-hdr h2{font-family:'Outfit',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.auth-hdr p{font-size:13px;color:rgba(255,255,255,.75);}
+.auth-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;}
+.auth-body{padding:22px;}
+.auth-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:18px;}
+.atab{flex:1;padding:9px;border:none;background:transparent;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.atab.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.fg{margin-bottom:13px;}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.fg input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif;color:var(--text);}
+.fg input:focus{border-color:var(--g);}
+.auth-submit{width:100%;padding:12px;background:var(--g);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s;font-family:'Outfit',sans-serif;letter-spacing:.3px;}
+.auth-submit:hover{background:var(--gd);}
+.auth-or{text-align:center;font-size:12px;color:var(--muted);margin:14px 0;position:relative;}
+.auth-or::before,.auth-or::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--border);}
+.auth-or::before{left:0;}.auth-or::after{right:0;}
+.soc-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.soc-btn:hover{background:var(--bg);border-color:#d1d5db;}
+.auth-alt{font-size:12px;color:var(--muted);text-align:center;margin-top:12px;}
+.auth-alt a{color:var(--g);cursor:pointer;font-weight:600;}
+
+/* ===== PROFILE VIEW ===== */
+.prof-wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px;}
+.prof-hero{background:linear-gradient(135deg,var(--g),var(--gd));border-radius:18px;padding:32px;display:flex;gap:24px;align-items:center;margin-bottom:24px;position:relative;overflow:hidden;}
+.prof-hero::after{content:'+';position:absolute;right:30px;top:50%;transform:translateY(-50%);font-size:120px;font-weight:100;color:rgba(255,255,255,.06);font-family:'Outfit',sans-serif;line-height:1;pointer-events:none;}
+.prof-av{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:32px;color:#fff;flex-shrink:0;}
+.prof-info h2{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:3px;}
+.prof-info p{font-size:13px;color:rgba(255,255,255,.75);}
+.prof-info .joined{font-size:11px;color:rgba(255,255,255,.5);margin-top:6px;}
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pcard{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:20px;}
+.pcard h3{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px;color:var(--text);}
+.pstat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pstat{background:var(--bg);border-radius:10px;padding:14px;text-align:center;}
+.pstat .psv{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:var(--g);}
+.pstat .psl{font-size:11px;color:var(--muted);margin-top:2px;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hi-dot{width:32px;height:32px;border-radius:9px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.hi-inf{flex:1;}.hi-t{font-size:13px;font-weight:600;}.hi-d{font-size:11px;color:var(--muted);}
+.hi-tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--gl);color:var(--g);font-weight:600;white-space:nowrap;}
+.btn-open-sm{font-size:11px;background:var(--g);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.prof-actions{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.prof-btn{padding:11px 16px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--text);display:flex;align-items:center;gap:10px;}
+.prof-btn:hover{background:var(--bg);border-color:var(--g);color:var(--g);}
+.prof-btn.danger:hover{border-color:var(--r);color:var(--r);background:var(--rl);}
+
+/* ===== DASHBOARD ===== */
+.dash-wrap{max-width:1300px;margin:0 auto;padding:32px 20px 60px;}
+.dash-hdr{margin-bottom:24px;}
+.dash-title{font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.dash-sub{font-size:14px;color:var(--muted);}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.dsc{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:18px;text-align:center;}
+.dsv{font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;color:var(--g);}
+.dsl{font-size:12px;color:var(--muted);margin-top:3px;}
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;}
+.dc{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:20px;}
+.dc h3{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px;}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cat-btn{background:var(--gl);border:none;border-radius:9px;padding:11px 12px;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--g);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.cat-btn:hover{background:var(--gm);}
+.sos-box{background:linear-gradient(135deg,var(--r),var(--rd));border-radius:var(--radius);padding:20px;text-align:center;color:#fff;}
+.sos-box h3{font-family:'Outfit',sans-serif;font-size:17px;font-weight:800;margin-bottom:6px;}
+.sos-box p{font-size:12px;opacity:.8;margin-bottom:14px;}
+.sos-big{background:#fff;color:var(--r);border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:transform .2s;}
+.sos-big:hover{transform:scale(1.03);}
+.tip-box{background:var(--gl);border-radius:10px;padding:14px;font-size:13px;color:#166534;line-height:1.6;margin-top:12px;}
+.tip-box strong{font-family:'Outfit',sans-serif;}
+
+/* ===== GUIDED AID MODAL ===== */
+.guided-opt{padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--text);display:flex;align-items:center;gap:10px;}
+.guided-opt:hover{border-color:var(--g);background:var(--gl);color:var(--g);}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:11px 22px;border-radius:50px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-lg);}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ===== FOOTER ===== */
+footer{background:var(--dark);padding:28px 20px;text-align:center;}
+.foot-links{display:flex;justify-content:center;gap:20px;margin-bottom:8px;flex-wrap:wrap;}
+.foot-links a{color:#94a3b8;font-size:13px;cursor:pointer;transition:color .2s;}
+.foot-links a:hover{color:#fff;}
+.foot-copy{font-size:12px;color:#475569;}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1000px){.guides-grid{grid-template-columns:repeat(2,1fr);}.dash-grid{grid-template-columns:1fr;}.prof-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){
+  .dnav{display:none;}.ham{display:flex;}; /* nav-avatar always visible */
+  .guides-grid{grid-template-columns:1fr;}.dash-stats{grid-template-columns:repeat(2,1fr);}
+  .hero-inner{grid-template-columns:1fr;}.hero-right-box{display:none;}
+  .emer-strip{flex-direction:column;}.hero-btns{flex-wrap:wrap;}
+  .filter-section{padding:12px 14px 0;}.main-wrap{padding:18px 14px 50px;}
+  .prof-grid{grid-template-columns:1fr;}
+}
+
+/* Force white text everywhere in hero, override any browser defaults */
+.hero-section *{color:inherit;}
+.hero-section{color:#ffffff;}
+.hero-section h1,.hero-section p,.hero-section span,.hero-section div{color:#ffffff;}
+.hero-section em{color:#4ade80 !important;}
+.hero-badge{color:#4ade80 !important;}
+.hval{color:#4ade80 !important;}
+.hlbl{color:#e2e8f0 !important;}
+.hero-right-box p{color:#e2e8f0 !important;}
+/* Override browser text selection highlight in hero */
+.hero-section ::selection{background:rgba(22,163,74,.5);color:#fff;}
+.hero-section ::-moz-selection{background:rgba(22,163,74,.5);color:#fff;}
+
+/* ── Firebase Auth States ── */
+.auth-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;color:var(--muted);font-size:14px;}
+.auth-spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;}
+.firebase-badge{display:inline-flex;align-items:center;gap:5px;background:#fff3e0;border:1px solid #ffe0b2;border-radius:6px;padding:4px 10px;font-size:11px;color:#e65100;margin-top:8px;}
+.firebase-badge.active{background:#e8f5e9;border-color:#c8e6c9;color:#2e7d32;}
+.google-btn{background:#fff;border:1.5px solid #dadce0;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;color:#3c4043;}
+.google-btn:hover{background:#f8f9fa;box-shadow:0 1px 6px rgba(0,0,0,.1);}
+.google-btn svg{width:18px;height:18px;flex-shrink:0;}
+.apple-btn{background:#000;color:#fff;border:1.5px solid #000;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
+.apple-btn:hover{background:#1a1a1a;}
+.pwd-toggle{position:relative;}
+.pwd-toggle input{padding-right:44px;}
+.pwd-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted);padding:4px;}
+.auth-error{background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;color:#b91c1c;margin-bottom:12px;display:none;}
+.auth-success{background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:13px;color:#15803d;margin-bottom:12px;display:none;}
+.verify-banner{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400e;display:none;margin:0 24px 16px;align-items:center;gap:10px;}
+.verify-banner.show{display:flex;}
+.notif-dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--r);border:2px solid #fff;display:none;}
+.notif-dot.show{display:block;}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo" onclick="sv('home')">
+      <div class="logo-mark">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="44" height="44" rx="12" fill="url(#lg1)"/>
+          <rect x="19" y="9" width="6" height="26" rx="3" fill="white"/>
+          <rect x="9" y="19" width="26" height="6" rx="3" fill="white"/>
+          <circle cx="22" cy="22" r="19" stroke="white" stroke-width="1.5" stroke-opacity="0.3" fill="none"/>
+          <defs><linearGradient id="lg1" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#16a34a"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">FaST AID</span>
+        <span class="logo-tag">Here For Your Safety</span>
+      </div>
+    </div>
+    <nav class="dnav">
+      <button class="ntab on" id="nl-home" onclick="sv('home')">🏠 Home</button>
+      <button class="ntab" id="nl-guides" onclick="sv('guides')">📋 First Aid Guides</button>
+      <button class="ntab" id="nl-dashboard" onclick="authGuard('dashboard')">📊 Dashboard</button>
+    </nav>
+    <div class="nav-right">
+      <!-- Profile icon — always visible, adapts to auth state -->
+      <div style="position:relative;">
+        <div class="nav-avatar" id="nav-av" onclick="toggleProfDrop()" title="Account" style="position:relative;">
+          <span id="nav-av-icon">👤</span>
+          <span id="nav-av-init" style="display:none;font-family:Outfit,sans-serif;font-weight:700;font-size:14px;"></span>
+          <div class="notif-dot" id="notif-dot"></div>
+        </div>
+        <div class="prof-drop" id="pdrop">
+          <div class="pd-head">
+            <div class="pd-av" id="pd-av">👤</div>
+            <div class="pd-nm" id="pd-nm">Welcome!</div>
+            <div class="pd-em" id="pd-em">Sign in to unlock all features</div>
+          </div>
+          <!-- Shown when logged OUT -->
+          <div class="pd-body" id="pd-guest">
+            <div class="pd-link" onclick="openAuth('login');closeProfDrop();">🔑 Login</div>
+            <div class="pd-link" onclick="openAuth('register');closeProfDrop();">📝 Register</div>
+          </div>
+          <!-- Shown when logged IN -->
+          <div class="pd-body" id="pd-user" style="display:none">
+            <div class="pd-link" onclick="sv('profile');closeProfDrop();">👤 My Profile</div>
+            <div class="pd-link" onclick="authGuard('dashboard');closeProfDrop();">📊 Dashboard</div>
+            <div class="pd-divider"></div>
+            <div class="pd-link danger" onclick="doLogout();closeProfDrop();">🚪 Sign Out</div>
+          </div>
+        </div>
+      </div>
+      <div class="ham" id="ham" onclick="toggleDrawer()"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== MOBILE DRAWER ===== -->
+<div class="drawer-overlay" id="droverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-logo">
+      <svg width="32" height="32" viewBox="0 0 44 44" fill="none"><rect width="44" height="44" rx="12" fill="#16a34a"/><rect x="19" y="9" width="6" height="26" rx="3" fill="white"/><rect x="9" y="19" width="26" height="6" rx="3" fill="white"/></svg>
+      <span style="font-family:'Outfit',sans-serif;font-weight:800;font-size:15px;color:#16a34a;">FaST AID</span>
+    </div>
+    <div class="drawer-close" onclick="closeDrawer()">✕</div>
+  </div>
+  <div class="drawer-profile" id="dp-section">
+    <div class="dp-avatar" id="dp-av">?</div>
+    <div class="dp-name" id="dp-name">Guest User</div>
+    <div class="dp-email" id="dp-email"></div>
+    <div class="dp-signin" id="dp-signin" onclick="openAuth('login');closeDrawer();">Sign in to save guides →</div>
+  </div>
+  <div class="drawer-nav">
+    <div class="ditem on" id="dm-home" onclick="sv('home');closeDrawer()"><span class="di">🏠</span>Home</div>
+    <div class="ditem" id="dm-guides" onclick="sv('guides');closeDrawer()"><span class="di">📋</span>First Aid Guides</div>
+    <div class="ditem" id="dm-dashboard" onclick="authGuard('dashboard');closeDrawer()"><span class="di">📊</span>Dashboard</div>
+    <div class="ditem" id="dm-profile" onclick="needAuth('profile');closeDrawer()"><span class="di">👤</span>My Profile</div>
+    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
+    <div class="ditem" id="dm-login" onclick="openAuth('login');closeDrawer()"><span class="di">🔑</span>Login</div>
+    <div class="ditem" id="dm-reg" onclick="openAuth('register');closeDrawer()"><span class="di">📝</span>Register</div>
+    <div class="ditem danger" id="dm-logout" style="display:none" onclick="doLogout();closeDrawer()"><span class="di">🚪</span>Sign Out</div>
+  </div>
+  <div class="drawer-foot">
+    <div style="font-size:11px;color:var(--muted);text-align:center;">© 2026 FaST AID — Built for East Africa</div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== MODALS ===== -->
+<div class="modal-ov" id="guide-modal" onclick="closeGM(event)">
+  <div class="modal" onclick="e=>e.stopPropagation()">
+    <div class="modal-hdr green-hdr" id="mhdr">
+      <div><div class="mh-title" id="m-title"></div><div class="mh-time" id="m-time"></div></div>
+      <button class="mh-close" onclick="closeGuideModal()">✕</button>
+    </div>
+    <div class="modal-warn" id="m-warn" style="display:none"></div>
+    <div class="modal-body"><ol class="step-list" id="m-steps"></ol></div>
+    <div class="modal-foot">
+      <button class="btn-save" id="save-btn" onclick="saveGuide()">🔖 Save Guide</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-done" style="background:var(--bg);color:var(--muted);border:1.5px solid var(--border);" onclick="closeGuideModal()">Close</button>
+        <button class="btn-done" onclick="closeGuideModal()">✓ Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="auth-modal" onclick="closeAM(event)">
+  <div class="auth-modal" onclick="e=>e.stopPropagation()">
+    <div class="auth-hdr">
+      <button class="auth-close" onclick="document.getElementById('auth-modal').classList.remove('on')">✕</button>
+      <h2 id="ah-title">Create Account</h2>
+      <p id="ah-sub">Join FaST AID — save guides &amp; track progress</p>
+    </div>
+    <!-- Email verification banner -->
+    <div class="verify-banner" id="verify-banner">
+      <span>📧</span>
+      <div>
+        <strong>Verify your email</strong> — Check your inbox and click the link we sent.
+        <a onclick="resendVerify()" style="color:var(--g);cursor:pointer;margin-left:6px;font-weight:600;">Resend</a>
+      </div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-tabs">
+        <button class="atab on" id="at-reg" onclick="switchAuth('register')">Register</button>
+        <button class="atab" id="at-login" onclick="switchAuth('login')">Login</button>
+      </div>
+      <div id="auth-error" class="auth-error"></div>
+      <div id="auth-success" class="auth-success"></div>
+      <div id="auth-form"></div>
+      <div class="auth-or">or continue with</div>
+      <!-- Real Google OAuth button -->
+      <button class="google-btn" onclick="signInGoogle()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.615 24 12.255 24z"/><path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 000 10.76l3.98-3.09z"/><path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.64 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+        Continue with Google
+      </button>
+      <!-- Firebase note when not configured -->
+      <div id="firebase-status-note" class="firebase-badge"></div>
+      <div style="height:4px;"></div>
+      <button class="auth-alt" onclick="forgotPassword()" style="background:none;border:none;width:100%;text-align:center;cursor:pointer;font-size:12px;color:var(--muted);padding:4px;" id="forgot-link">Forgot password?</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="guided-modal" onclick="closeGuidedOv(event)">
+  <div class="modal" onclick="e=>e.stopPropagation()">
+    <div class="modal-hdr blue-hdr">
+      <div><div class="mh-title">🩺 Guided First Aid</div><div class="mh-time" id="guided-sub">Select the emergency type</div></div>
+      <button class="mh-close" onclick="document.getElementById('guided-modal').classList.remove('on')">✕</button>
+    </div>
+    <div class="modal-body" id="guided-body"></div>
+    <div class="modal-foot" id="guided-foot"></div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- HOME VIEW -->
+<!-- ======================================================= -->
+<div id="view-home" class="view on">
+  <div class="hero-section">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge"><span class="pulse"></span>LIVE · Uganda &amp; East Africa</div>
+        <h1>First aid guidance<br><em>when it matters most</em></h1>
+        <p>Quick, localised, offline-capable first aid instructions and emergency guidance tailored to Uganda &amp; East Africa — available anytime, anywhere.</p>
+        <div class="hero-btns">
+          <button class="btn-sos" onclick="call911()">📞 Call 911</button>
+          <button class="btn-guide" onclick="startGuided()">🩺 Start Guided Aid</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hval" id="hs-guides">99+</div><div class="hlbl">Guides</div></div>
+          <div class="hstat"><div class="hval">15+</div><div class="hlbl">Categories</div></div>
+          <div class="hstat"><div class="hval">EA</div><div class="hlbl">Localised</div></div>
+        </div>
+      </div>
+      <div class="hero-right-box">
+        <div class="big-cross">✚</div>
+        <p>Offline-ready guides &amp; local language support</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden inputs kept for filterG() compatibility -->
+  <input type="text" id="sinput" style="display:none">
+  <div id="offline-notice" style="display:none"></div>
+
+  <!-- Quick Action Strip -->
+  <div style="background:#fff;border-bottom:1px solid var(--border);">
+    <div style="max-width:1300px;margin:0 auto;padding:16px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <div style="font-family:'Source Serif 4',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px;">What do you need help with?</div>
+        <div style="font-size:13px;color:var(--muted);">Browse all guides or use Guided Aid to find the right response fast.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-guide" onclick="sv('guides')" style="padding:11px 20px;font-size:14px;">📋 Browse All Guides</button>
+        <button class="btn-sos" onclick="startGuided()" style="padding:11px 20px;font-size:14px;">🩺 Guided Aid</button>
+        <button class="btn-call" onclick="call911()" style="padding:11px 20px;font-size:14px;">📞 Call 911</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category quick-links row -->
+  <div style="background:#f8fafc;border-bottom:1px solid var(--border);">
+    <div style="max-width:1300px;margin:0 auto;padding:12px 20px;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🩸 Bleeding</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🔥 Burns</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">❤️ Cardiac</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">😮 Choking</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🦴 Fractures</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">☠️ Poisoning</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">💉 Allergy</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🐍 Bites</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">⚡ Electric</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🌊 Drowning</button>
+      <button onclick="sv('guides')" style="flex-shrink:0;padding:7px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">🧠 Mental</button>
+    </div>
+  </div>
+
+  <div id="ftabs" style="display:none">
+    <button class="ftab on" onclick="setF('All',this)">All</button>
+    <button class="ftab" onclick="setF('Bleeding',this)">🩸 Bleeding</button>
+    <button class="ftab" onclick="setF('Burn',this)">🔥 Burns</button>
+    <button class="ftab" onclick="setF('Cardiac',this)">❤️ Cardiac</button>
+    <button class="ftab" onclick="setF('Choking',this)">😮 Choking</button>
+    <button class="ftab" onclick="setF('Fracture',this)">🦴 Fractures</button>
+    <button class="ftab" onclick="setF('Poisoning',this)">☠️ Poisoning</button>
+    <button class="ftab" onclick="setF('Anaphylaxis',this)">💉 Allergy</button>
+    <button class="ftab" onclick="setF('Wound',this)">🩹 Wounds</button>
+    <button class="ftab" onclick="setF('Heat',this)">🌡️ Heat</button>
+    <button class="ftab" onclick="setF('Drowning',this)">🌊 Drowning</button>
+    <button class="ftab" onclick="setF('Eye',this)">👁️ Eye</button>
+    <button class="ftab" onclick="setF('Mental',this)">🧠 Mental</button>
+    <button class="ftab" onclick="setF('Diabetic',this)">💉 Diabetic</button>
+    <button class="ftab" onclick="setF('Bite',this)">🐍 Bites</button>
+    <button class="ftab" onclick="setF('Electric',this)">⚡ Electric</button>
+  </div>
+
+  <!-- Home guides grid hidden — guides live in First Aid Guides page -->
+  <div id="ggrid" style="display:none"></div>
+  <span id="guide-count" style="display:none"></span>
+
+
+  <!-- RECENTLY VIEWED on HOME -->
+  <div style="max-width:1300px;margin:0 auto;padding:24px 20px 32px;" id="home-recent-wrap">
+    <div class="sec-hdr" style="margin-bottom:16px;">
+      <div class="sec-title">🕐 Recently Viewed Guides</div>
+      <button onclick="sv('guides')" style="font-size:13px;color:var(--g);background:none;border:none;cursor:pointer;font-weight:600;font-family:'IBM Plex Sans',sans-serif;">View All Guides →</button>
+    </div>
+    <div id="home-recent-grid"></div>
+  </div>
+
+  <div class="emer-strip">
+    <div class="emer-left">
+      <h3>🚨 Emergency?</h3>
+      <p>Call for an ambulance or find your nearest clinic immediately.</p>
+    </div>
+    <div class="emer-btns">
+      <button class="btn-call" onclick="call911()">📞 Call 911</button>
+      <button class="btn-map" onclick="findClinic()">📍 Find Clinics Near Me</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="foot-links">
+      <a onclick="toast2('Help Center coming soon')">Help Center</a>
+      <a>Jayce-116 ©</a>
+      <a onclick="toast2('Privacy Policy coming soon')">Privacy Policy</a>
+      <a onclick="toast2('Terms of Service coming soon')">Terms of Service</a>
+    </div>
+    <div class="foot-copy">© 2026 FaST AID — Built for East Africa</div>
+  </footer>
+</div>
+
+<!-- ======================================================= -->
+<!-- GUIDES VIEW — Standalone First Aid Guides Page         -->
+<!-- ======================================================= -->
+<div id="view-guides" class="view">
+  <div style="background:linear-gradient(135deg,#0f172a 0%,#1a2744 60%,#162032 100%);padding:36px 20px 28px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(22,163,74,.1);pointer-events:none;"></div>
+    <div style="max-width:1300px;margin:0 auto;position:relative;z-index:1;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(22,163,74,.2);border:1px solid rgba(34,197,94,.4);padding:5px 14px;border-radius:50px;font-size:12px;font-weight:600;color:#4ade80;margin-bottom:14px;letter-spacing:.5px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span> 99+ Guides Available
+      </div>
+      <h1 style="font-family:'Source Serif 4',serif;font-size:clamp(24px,4vw,40px);font-weight:700;color:#ffffff;margin-bottom:10px;line-height:1.1;">First Aid Guides</h1>
+      <p style="font-size:15px;color:#e2e8f0;max-width:560px;line-height:1.6;">Browse all clinically accurate first aid guides. Search by condition, filter by category, and open any guide instantly — online or offline.</p>
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn-sos" onclick="call911()" style="padding:10px 20px;font-size:13px;">📞 Call 911</button>
+        <button class="btn-guide" onclick="startGuided()" style="padding:10px 20px;font-size:13px;">🩺 Guided Aid</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search + Mode bar -->
+  <div style="background:#fff;border-bottom:1px solid var(--border);position:sticky;top:68px;z-index:90;">
+    <div style="max-width:1300px;margin:0 auto;padding:12px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;padding:9px 14px;">
+        <span>🔍</span>
+        <input type="text" id="g2-search" placeholder="Search guides (e.g. CPR, bleeding, snakebite...)" oninput="renderGuidesPage()" style="flex:1;border:none;outline:none;font-size:14px;background:transparent;font-family:'IBM Plex Sans',sans-serif;color:var(--text);">
+      </div>
+      <div class="mode-toggle" style="border:1.5px solid var(--border);flex-shrink:0;">
+        <button class="mtab on" id="g2-online" onclick="setGMode('online')">🌐 Online</button>
+        <button class="mtab" id="g2-offline" onclick="setGMode('offline')">📴 Offline</button>
+      </div>
+      <button class="search-btn" onclick="renderGuidesPage()">Search</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div style="max-width:1300px;margin:0 auto;padding:14px 20px 0;display:flex;gap:7px;flex-wrap:wrap;" id="g2-ftabs">
+    <button class="ftab on" onclick="setG2F('All',this)">All</button>
+    <button class="ftab" onclick="setG2F('Bleeding',this)">🩸 Bleeding</button>
+    <button class="ftab" onclick="setG2F('Burn',this)">🔥 Burns</button>
+    <button class="ftab" onclick="setG2F('Cardiac',this)">❤️ Cardiac</button>
+    <button class="ftab" onclick="setG2F('Choking',this)">😮 Choking</button>
+    <button class="ftab" onclick="setG2F('Fracture',this)">🦴 Fractures</button>
+    <button class="ftab" onclick="setG2F('Poisoning',this)">☠️ Poisoning</button>
+    <button class="ftab" onclick="setG2F('Anaphylaxis',this)">💉 Allergy</button>
+    <button class="ftab" onclick="setG2F('Wound',this)">🩹 Wounds</button>
+    <button class="ftab" onclick="setG2F('Heat',this)">🌡️ Heat</button>
+    <button class="ftab" onclick="setG2F('Drowning',this)">🌊 Drowning</button>
+    <button class="ftab" onclick="setG2F('Eye',this)">👁️ Eye</button>
+    <button class="ftab" onclick="setG2F('Mental',this)">🧠 Mental</button>
+    <button class="ftab" onclick="setG2F('Diabetic',this)">💊 Diabetic</button>
+    <button class="ftab" onclick="setG2F('Bite',this)">🐍 Bites</button>
+    <button class="ftab" onclick="setG2F('Electric',this)">⚡ Electric</button>
+  </div>
+
+  <!-- Count + grid -->
+  <div style="max-width:1300px;margin:0 auto;padding:16px 20px 48px;">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;font-family:'IBM Plex Sans',sans-serif;" id="g2-count"></div>
+    <div class="guides-grid" id="g2-grid"></div>
+  </div>
+
+  <!-- Emergency strip -->
+  <div class="emer-strip">
+    <div class="emer-left"><h3>🚨 Emergency?</h3><p>Call for an ambulance or find your nearest clinic.</p></div>
+    <div class="emer-btns">
+      <button class="btn-call" onclick="call911()">📞 Call 911</button>
+      <button class="btn-map" onclick="findClinic()">📍 Find Clinics Near Me</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- DASHBOARD VIEW — FULL GUIDES LIBRARY -->
+<!-- ======================================================= -->
+<div id="view-dashboard" class="view">
+  <div class="dash-wrap">
+    <!-- Auth wall — shown when not logged in -->
+    <div id="dash-authwall" style="display:none;text-align:center;padding:80px 20px;">
+      <div style="font-size:60px;margin-bottom:16px;">🔒</div>
+      <h2 style="font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;margin-bottom:10px;color:var(--text);">Sign in to Access Your Dashboard</h2>
+      <p style="font-size:15px;color:var(--muted);max-width:400px;margin:0 auto 24px;line-height:1.6;">Your personalised dashboard with saved guides, activity stats, and the complete first aid library is waiting for you.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-guide" onclick="openAuth('login')" style="padding:13px 28px;font-size:15px;">🔑 Login</button>
+        <button class="btn-sos" style="background:var(--g);padding:13px 28px;font-size:15px;box-shadow:none;" onclick="openAuth('register')">📝 Register Free</button>
+      </div>
+    </div>
+    <!-- Dashboard content — shown when logged in -->
+    <div id="dash-content">
+    <div class="dash-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div>
+        <div class="dash-title" id="dsh-greet">First Aid Library 📚</div>
+        <div class="dash-sub">Browse all guides by category · Search · Filter · Save your favourites</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="mode-toggle" style="border:1.5px solid var(--border);">
+          <button class="mtab on" id="dmtab-online" onclick="setDMode('online')">🌐 Online</button>
+          <button class="mtab" id="dmtab-offline" onclick="setDMode('offline')">📴 Offline</button>
+        </div>
+        <button class="btn-call" onclick="call911()" style="padding:9px 16px;font-size:13px;">📞 911</button>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="dash-stats" style="margin-bottom:20px;">
+      <div class="dsc"><div class="dsv" id="ds1">0</div><div class="dsl">Guides Viewed</div></div>
+      <div class="dsc"><div class="dsv" id="ds2">0</div><div class="dsl">Saved</div></div>
+      <div class="dsc"><div class="dsv" id="ds3">0</div><div class="dsl">Searches</div></div>
+      <div class="dsc"><div class="dsv" id="ds4">0</div><div class="dsl">Days Active</div></div>
+    </div>
+
+    <!-- Search + filters inside dashboard -->
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;padding:9px 14px;">
+          <span>🔍</span>
+          <input type="text" id="dsinput" placeholder="Search all guides..." oninput="renderDash()" style="flex:1;border:none;outline:none;font-size:14px;background:transparent;font-family:'IBM Plex Sans',sans-serif;color:var(--text);">
+        </div>
+        <select id="dcat-filter" onchange="renderDash()" style="padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff;font-family:'IBM Plex Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+          <option value="All">All Categories</option>
+          <option>Bleeding</option><option>Burn</option><option>Cardiac</option>
+          <option>Choking</option><option>Fracture</option><option>Poisoning</option>
+          <option>Anaphylaxis</option><option>Wound</option><option>Heat</option>
+          <option>Drowning</option><option>Eye</option><option>Mental</option>
+          <option>Diabetic</option><option>Bite</option><option>Electric</option>
+        </select>
+        <select id="durg-filter" onchange="renderDash()" style="padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff;font-family:'IBM Plex Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+          <option value="All">All Types</option>
+          <option value="urgent">🚨 Urgent Only</option>
+          <option value="saved">🔖 Saved Only</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="d-ftabs">
+        <button class="ftab on" onclick="setDF('All',this)">All</button>
+        <button class="ftab" onclick="setDF('Bleeding',this)">🩸</button>
+        <button class="ftab" onclick="setDF('Burn',this)">🔥</button>
+        <button class="ftab" onclick="setDF('Cardiac',this)">❤️</button>
+        <button class="ftab" onclick="setDF('Choking',this)">😮</button>
+        <button class="ftab" onclick="setDF('Fracture',this)">🦴</button>
+        <button class="ftab" onclick="setDF('Poisoning',this)">☠️</button>
+        <button class="ftab" onclick="setDF('Anaphylaxis',this)">💉</button>
+        <button class="ftab" onclick="setDF('Wound',this)">🩹</button>
+        <button class="ftab" onclick="setDF('Heat',this)">🌡️</button>
+        <button class="ftab" onclick="setDF('Drowning',this)">🌊</button>
+        <button class="ftab" onclick="setDF('Eye',this)">👁️</button>
+        <button class="ftab" onclick="setDF('Mental',this)">🧠</button>
+        <button class="ftab" onclick="setDF('Diabetic',this)">💊</button>
+        <button class="ftab" onclick="setDF('Bite',this)">🐍</button>
+        <button class="ftab" onclick="setDF('Electric',this)">⚡</button>
+      </div>
+    </div>
+
+    <!-- Guide count -->
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-family:'IBM Plex Sans',sans-serif;" id="d-guide-count"></div>
+
+    <!-- Full guides grid -->
+    <div class="guides-grid" id="d-ggrid"></div>
+
+    <!-- Bottom: saved + tip -->
+    <div class="dash-grid" style="margin-top:24px;">
+      <div class="dc">
+        <h3>🔖 Saved Guides</h3>
+        <div id="d-saved"></div>
+      </div>
+      <div>
+        <div class="sos-box">
+          <h3>🚨 Emergency SOS</h3>
+          <p>In immediate danger? Call now.</p>
+          <button class="sos-big" onclick="call911()">📞 CALL 911 NOW</button>
+        </div>
+        <div class="tip-box" style="margin-top:12px;">
+          <strong>💡 Tip of the Day</strong><br>
+          <span id="d-tip">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- /dash-content -->
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- PROFILE VIEW -->
+<!-- ======================================================= -->
+<div id="view-profile" class="view">
+  <div class="prof-wrap">
+    <div class="prof-hero">
+      <div class="prof-av" id="pav">?</div>
+      <div class="prof-info">
+        <h2 id="p-name">Guest User</h2>
+        <p id="p-email">Not signed in</p>
+        <p class="joined" id="p-joined"></p>
+      </div>
+    </div>
+    <div class="prof-grid">
+      <div class="pcard">
+        <h3>📊 My Statistics</h3>
+        <div class="pstat-grid">
+          <div class="pstat"><div class="psv" id="pp1">0</div><div class="psl">Guides Viewed</div></div>
+          <div class="pstat"><div class="psv" id="pp2">0</div><div class="psl">Saved Guides</div></div>
+          <div class="pstat"><div class="psv" id="pp3">0</div><div class="psl">Searches</div></div>
+          <div class="pstat"><div class="psv" id="pp4">0</div><div class="psl">Days Active</div></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <h3>⚙️ Account Settings</h3>
+        <div class="prof-actions" id="prof-actions"></div>
+        <!-- Firebase setup status -->
+        <div id="firebase-setup-card" style="margin-top:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;" id="fb-setup-title">🔥 Firebase Status</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;" id="fb-setup-text">Loading...</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <h3>🔖 Saved Guides</h3>
+        <div id="p-saved"></div>
+      </div>
+      <div class="pcard">
+        <h3>📋 Recently Viewed</h3>
+        <div id="p-viewed"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ALL GUIDES DATA =====
+const GUIDES=[
+  // BLEEDING
+  {id:1,title:"Severe Bleeding Control",time:"5–7 min",desc:"Stop heavy external bleeding and prevent shock.",tag:"Bleeding",tc:"tag-bleed",urgent:true,
+   warn:"⚠️ Wear gloves if available. If blood is spurting, call 911 immediately.",
+   steps:["Apply firm direct pressure with a clean cloth/gauze. Add more on top if soaks through — do NOT remove.","Elevate the injured limb above heart level if possible to slow blood flow.","If limb bleeding is severe and uncontrolled: apply tourniquet 5–8cm above wound. Note the time applied.","Do NOT remove embedded objects — stabilise them and apply pressure around them.","Keep the person warm and lying down. Talk calmly to prevent panic and shock.","Call 911 if bleeding does not slow in 10 min or person shows signs of shock (pale, dizzy, rapid breathing)."]},
+  {id:2,title:"Nosebleed (Epistaxis)",time:"3–5 min",desc:"Stop mild to moderate nosebleeds quickly.",tag:"Bleeding",tc:"tag-bleed",
+   warn:"⚠️ Do NOT tilt head back — swallowing blood causes vomiting.",
+   steps:["Sit upright and lean FORWARD slightly — never backward.","Pinch the soft lower part of the nose firmly just below the bony bridge. Breathe through the mouth.","Hold continuously for 10–15 minutes without releasing to check.","Apply a cold wet cloth to the forehead or back of neck.","Do NOT stuff tissues deep into the nostril.","If bleeding exceeds 20 min, blood is gushing, or follows head injury — seek emergency care."]},
+  {id:3,title:"Internal Bleeding",time:"Immediate — call 911",desc:"Recognise and respond to suspected internal bleeding.",tag:"Bleeding",tc:"tag-bleed",urgent:true,
+   warn:"🚨 Internal bleeding is life-threatening. Call 911 immediately.",
+   steps:["Signs: bruising without injury, abdominal pain/rigidity, coughing blood, pale/cold/clammy skin, rapid weak pulse.","Call 911 immediately — internal bleeding requires hospital surgery.","Lay person flat on back. Do NOT give food or water.","Raise legs 30cm if no spinal injury suspected, to maintain circulation.","Keep warm with a blanket. Monitor breathing and pulse continuously.","Do NOT leave person alone. Reassure calmly until help arrives."]},
+  // BURNS
+  {id:4,title:"Minor Burn (1st Degree)",time:"3–5 min",desc:"Cool and treat superficial burn injuries.",tag:"Burn",tc:"tag-burn",
+   warn:"⚠️ Never use ice, butter, or toothpaste on burns.",
+   steps:["Cool immediately under cool (not ice cold) running water for 10–20 minutes.","Do NOT apply butter, toothpaste, oil, egg white or ice — these worsen burns.","Remove jewellery/tight clothing near the burn before swelling occurs.","Cover loosely with a clean non-fluffy bandage or cling film.","Take paracetamol or ibuprofen for pain relief if available and not allergic.","Seek advice if burn is larger than 3cm, on face/hands/joints, or doesn't improve in 48hrs."]},
+  {id:5,title:"Second-Degree Burn",time:"5–8 min",desc:"Manage blistering burn injuries safely.",tag:"Burn",tc:"tag-burn",urgent:true,
+   warn:"⚠️ Do NOT pop blisters. Seek care for burns larger than your palm.",
+   steps:["Cool under running water for 20 minutes immediately. Do NOT pop blisters.","Remove watches, rings, belts near the burned area before swelling.","Do NOT apply any home remedies.","Cover loosely with cling film or clean plastic bag — NOT fluffy bandages.","Keep person warm — cooling large areas can cause hypothermia.","Seek medical care. Second-degree burns larger than the palm need hospital attention."]},
+  {id:6,title:"Third-Degree Burn",time:"Immediate — call 911",desc:"Life-threatening deep burn requiring emergency care.",tag:"Burn",tc:"tag-burn",urgent:true,
+   warn:"🚨 Third-degree burns are always life-threatening emergencies.",
+   steps:["Call 911 immediately.","Do NOT remove clothing stuck to the burn. Do NOT pour water on large burns.","Keep the person still. Do NOT touch the burned area.","Cover loosely with a clean dry sheet or cling film — never fluffy dressings.","Monitor for shock: pale skin, rapid breathing, weakness. Lay person flat if needed.","Do NOT give food or drink. Stay with person until emergency services arrive."]},
+  {id:7,title:"Chemical Burn",time:"10–15 min",desc:"Treat burns from acids, alkalis or household chemicals.",tag:"Burn",tc:"tag-burn",urgent:true,
+   warn:"⚠️ Wear gloves. Identify the chemical if safe — bring container to hospital.",
+   steps:["Remove contaminated clothing carefully — wear gloves if available.","Flush area with large amounts of cool running water for 20–30 minutes.","Do NOT try to neutralise the chemical with another substance.","Eye burns: flush with clean water for 20 min, holding eyelid open.","Keep chemicals away from other body parts while rinsing.","Seek emergency care — bring the chemical container/label for hospital staff."]},
+  // CARDIAC
+  {id:8,title:"CPR — Adult",time:"Until help arrives",desc:"Perform CPR on an unresponsive adult with no pulse.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Call 911 FIRST. Start CPR within 4 minutes of collapse for best outcome.",
+   steps:["Check safety. Tap shoulders: 'Are you okay?' Call 911 or ask someone to call immediately.","Lay on firm surface. Tilt head back, lift chin. Check for normal breathing (max 10 seconds).","No breathing: give 30 chest compressions. Heel of hand on centre of chest, push 5–6cm deep at 100–120 per minute.","Give 2 rescue breaths: tilt head back, pinch nose, seal mouth, blow until chest rises.","Continue 30:2 cycle until ambulance arrives, person recovers, or you cannot continue.","Use AED if available: turn on, attach pads, follow audio instructions precisely."]},
+  {id:9,title:"CPR — Child (1–8 yrs)",time:"Until help arrives",desc:"Perform CPR on an unresponsive child.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Use gentler force for children. If alone, give 1 min CPR before calling 911.",
+   steps:["Check response: tap shoulders. If no response, call 911 (or give 1 min CPR first if alone).","Open airway: tilt head GENTLY back. Look, listen, feel for breathing for 10 seconds.","Give 5 initial rescue breaths: small, gentle puffs covering both mouth and nose.","30 chest compressions: one hand (or 2 fingers for infants), push down one-third of chest depth.","Continue 30:2 ratio. For infants use 2 fingers only. For children use 1 hand.","Use child AED pads if available. Continue until help arrives or child recovers."]},
+  {id:10,title:"Heart Attack",time:"Immediate — call 911",desc:"Identify and respond to a heart attack quickly.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Every minute without treatment increases permanent heart damage.",
+   steps:["Signs: chest pain/pressure, pain to arm/jaw/back, shortness of breath, nausea, cold sweat, dizziness.","Call 911 immediately — do not drive the person yourself.","Sit person comfortably (W-position). Loosen tight clothing around neck and chest.","If conscious and not allergic to aspirin: give 300mg aspirin to chew slowly.","Keep calm and still. Do NOT give food or water.","If unconscious and not breathing: begin CPR immediately."]},
+  {id:11,title:"Stroke (FAST Response)",time:"Immediate — call 911",desc:"Recognise stroke and act within the golden hour.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Every minute matters. FAST = Face, Arms, Speech, Time.",
+   steps:["FACE: Ask to smile — is one side drooping?","ARMS: Ask to raise both arms — does one drift downward?","SPEECH: Ask to repeat a simple phrase — is speech slurred or strange?","TIME: If ANY of these, call 911 immediately. Note the exact time symptoms began.","Keep person lying down comfortably. Do NOT give food, water or medication.","Do not leave alone. Monitor breathing until emergency services arrive."]},
+  // CHOKING
+  {id:12,title:"Choking — Adult",time:"1–3 min",desc:"Dislodge a foreign object from an adult's airway.",tag:"Choking",tc:"tag-choke",urgent:true,
+   warn:"⚠️ If person can cough strongly, do not interfere — let them cough it out.",
+   steps:["Ask 'Are you choking?' If they can cough or speak — encourage forceful coughing.","If cannot breathe/cough/speak: lean person forward slightly, stand behind them.","Give 5 sharp back blows between shoulder blades with heel of hand.","If back blows fail: 5 abdominal thrusts (Heimlich). Fist above navel, pull sharply inward and upward.","Alternate 5 back blows and 5 abdominal thrusts until object expelled or person unconscious.","If unconscious: lower carefully, call 911, begin CPR — check mouth before each breath for object."]},
+  {id:13,title:"Choking — Infant (Under 1)",time:"1–2 min",desc:"Clear airway blockage in a baby or infant.",tag:"Choking",tc:"tag-choke",urgent:true,
+   warn:"⚠️ NEVER do abdominal thrusts on infants. Use back blows and chest thrusts only.",
+   steps:["Hold baby face DOWN along your forearm, head lower than chest, supporting head firmly.","Give 5 firm back blows between shoulder blades with heel of hand.","Turn baby face UP, support head. Give 5 chest thrusts: 2 fingers on lower breastbone.","Check mouth — only remove clearly visible objects. NEVER blind finger sweep.","Alternate 5 back blows + 5 chest thrusts until object expelled or infant unconscious.","If unconscious: call 911 immediately and begin infant CPR."]},
+  {id:14,title:"Choking — Pregnant/Obese",time:"1–3 min",desc:"Heimlich adaptation for pregnancy or obesity.",tag:"Choking",tc:"tag-choke",urgent:true,
+   warn:"⚠️ Use CHEST thrusts, NOT abdominal thrusts.",
+   steps:["Stand behind person. For pregnant: place hands higher — at base of breastbone, NOT abdomen.","Give 5 back blows between shoulder blades with heel of hand first.","Chest thrusts: clasped hands on centre of chest, thrust sharply inward.","Alternate 5 back blows and 5 chest thrusts continuously.","If person becomes unconscious, lower carefully and call 911.","Begin CPR if no breathing. Tilt pregnant person slightly left during compressions."]},
+  // FRACTURES
+  {id:15,title:"Broken Bone (Fracture)",time:"5–10 min",desc:"Stabilise a suspected fracture until medical help arrives.",tag:"Fracture",tc:"tag-frac",
+   warn:"⚠️ Do NOT try to realign bones. Immobilise in the position found.",
+   steps:["Do not move person unless in immediate danger. Immobilise the injured area.","Support the limb in position found — do NOT try to straighten it.","Apply a splint: rigid object (board, rolled newspaper) padded with cloth, securing above and below fracture.","Apply ice wrapped in cloth for 20 min to reduce swelling. Do NOT apply ice directly to skin.","Elevate limb if possible to reduce swelling. Check circulation (fingers/toes warm and pink).","Call 911 if: open fracture, spine/pelvis/thigh, limb is numb/pale, or severe pain/deformity."]},
+  {id:16,title:"Suspected Spinal Injury",time:"Immediate — call 911",desc:"Prevent paralysis from suspected spinal cord injuries.",tag:"Fracture",tc:"tag-frac",urgent:true,
+   warn:"🚨 Any movement can cause permanent paralysis. Keep completely still.",
+   steps:["Call 911 immediately. Do NOT move person unless life-threatening danger.","Keep head, neck, and spine in neutral position. Tell person NOT to move.","If wearing a helmet — do NOT remove it.","Kneel above head, place hands on either side to prevent movement.","If vomiting: carefully log-roll entire body as one unit, keeping spine straight.","Monitor breathing. Begin CPR only if absolutely necessary, maintaining head alignment."]},
+  {id:17,title:"Dislocated Joint",time:"5–10 min",desc:"Respond to a shoulder, knee, or finger dislocation.",tag:"Fracture",tc:"tag-frac",
+   warn:"⚠️ NEVER attempt to force joint back into place — causes more damage.",
+   steps:["Do NOT attempt to force the joint back — this causes additional damage.","Immobilise joint in position found using sling, splint, or padding.","Apply ice wrapped in cloth for 20 min to reduce pain and swelling.","Elevate affected area if possible.","Seek medical care promptly — joints need X-ray and professional reduction.","Give over-the-counter pain relief if available and person has no known allergies."]},
+  // POISONING
+  {id:18,title:"Suspected Poisoning",time:"Immediate",desc:"Respond to accidental ingestion of toxic substances.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 Do NOT induce vomiting unless specifically told to by Poison Control.",
+   steps:["Call 911 or Poison Control immediately. Identify the substance — keep the container.","Do NOT induce vomiting unless specifically instructed by poison control.","If conscious: keep calm and seated. Do not give food or water.","Skin/eye contact: flush with large amounts of clean water for 15–20 min.","Inhaled poison: move to fresh air immediately. Do not re-enter without protection.","Monitor breathing and consciousness. If unconscious, recovery position. Begin CPR if needed."]},
+  {id:19,title:"Alcohol Poisoning",time:"Immediate — call 911",desc:"Respond to severe alcohol intoxication.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 NEVER leave an unconscious intoxicated person alone.",
+   steps:["Call 911 if: unconscious, won't wake, breathing under 8x/min, seizures, vomiting unconsciously.","Keep person awake if possible. Never leave alone.","Recovery position (on side) if unconscious — prevents choking on vomit.","Do NOT give coffee, food, water, or put in cold shower.","Keep warm — alcohol causes dangerous body temperature drop.","Monitor breathing continuously until help arrives."]},
+  {id:20,title:"Drug Overdose",time:"Immediate — call 911",desc:"Respond to an opioid or medication overdose.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 Opioid overdose is rapidly fatal. Call 911 and start CPR if not breathing.",
+   steps:["Call 911 immediately. Note what was taken and how much if known.","Stay with person. Do NOT leave alone.","If unresponsive and not breathing: begin CPR immediately.","If opioid overdose suspected and naloxone (Narcan) available: administer as directed.","Place unconscious but breathing person in recovery position.","Keep warm. Collect medication bottles/paraphernalia for emergency responders."]},
+  {id:21,title:"Carbon Monoxide Poisoning",time:"Immediate — call 911",desc:"Respond to CO poisoning from gas, fire, or vehicles.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 Do NOT re-enter the building — CO is invisible and odourless.",
+   steps:["Move everyone outside to fresh air immediately. Do NOT re-enter.","Call 911 and the fire brigade. Do NOT use electric switches or naked flames.","If person is unconscious and not breathing: begin CPR.","Even if person seems recovered, all must go to hospital — CO poisoning has delayed effects.","Open all windows and doors if possible from outside.","Do not go back in until the building is declared safe by emergency services."]},
+  // ANAPHYLAXIS
+  {id:22,title:"Anaphylaxis (Severe Allergy)",time:"Immediate",desc:"Emergency response to life-threatening allergic reaction.",tag:"Anaphylaxis",tc:"tag-ana",urgent:true,
+   warn:"🚨 Use EpiPen immediately. Anaphylaxis can be fatal within minutes.",
+   steps:["Signs: difficulty breathing, throat swelling, widespread hives, rapid pulse, dizziness, collapse.","Call 911 immediately.","Use epinephrine auto-injector (EpiPen) if available: outer thigh, hold 10 seconds.","Lay person flat with legs raised (unless breathing difficulty — then sit them up).","If they lose consciousness: recovery position. Begin CPR if they stop breathing.","Second EpiPen dose after 5–15 min if symptoms return. Always go to hospital even if improved."]},
+  // WOUNDS
+  {id:23,title:"Wound Cleaning & Care",time:"5–10 min",desc:"Clean and dress minor cuts and wounds safely.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Deep or gaping wounds may need stitches. Seek care promptly.",
+   steps:["Wash hands thoroughly before treating any wound.","Stop bleeding with gentle pressure using clean cloth for 5–10 min.","Clean under running water for 5 min. Remove visible dirt gently.","Pat dry with clean gauze. Apply antiseptic (iodine or chlorhexidine).","Cover with sterile bandage. Change dressing daily or when wet/dirty.","Seek care if: deep/gaping, won't stop bleeding, signs of infection (redness, pus, fever, warmth), or animal bite."]},
+  {id:24,title:"Animal Bite",time:"10–15 min",desc:"Treat animal or human bites and prevent infection.",tag:"Bite",tc:"tag-bite",
+   warn:"⚠️ All animal bites carry infection and rabies risk. Seek medical care.",
+   steps:["Wash the bite wound thoroughly with soap and water for 5 minutes immediately.","Apply gentle pressure to control any bleeding.","Do NOT close the wound with tape or bandage tightly — bites need to drain.","Apply antiseptic. Cover loosely with clean dressing.","Seek medical care urgently — rabies vaccination may be needed, especially for dog/bat bites.","Report the animal if possible for authorities to assess rabies risk."]},
+  {id:25,title:"Snake Bite",time:"Immediate — call 911",desc:"Respond safely to a snake bite in East Africa.",tag:"Bite",tc:"tag-bite",urgent:true,
+   warn:"🚨 Do NOT cut, suck, or tourniquet the wound. Get to hospital FAST.",
+   steps:["Move away from the snake carefully — do NOT handle even if apparently dead.","Keep the person calm and STILL. Movement spreads venom faster.","Immobilise the bitten limb at heart level. Remove watches, rings, tight clothing.","Do NOT cut, suck, apply tourniquet, or apply electric shock — all make it worse.","Note the time of bite and snake appearance/colour if seen safely.","Call 911 and rush to nearest hospital with anti-venom. Carry the person if possible — do not let them walk."]},
+  {id:26,title:"Insect Sting",time:"5–10 min",desc:"Treat bee, wasp, and scorpion stings.",tag:"Bite",tc:"tag-bite",
+   warn:"⚠️ Watch for signs of anaphylaxis — treat immediately if present.",
+   steps:["If bee sting: remove the stinger by scraping sideways with a card — don't squeeze.","Wash the area with soap and water.","Apply a cold compress for 10 min to reduce pain and swelling.","Take antihistamine (e.g. chlorphenamine) to reduce allergic reaction if available.","For scorpion stings: keep still and calm, go to hospital — children need urgent care.","Watch for anaphylaxis signs: if breathing difficulty or throat swelling — use EpiPen and call 911."]},
+  // HEAT
+  {id:27,title:"Heatstroke",time:"Immediate — call 911",desc:"Treat dangerous overheating — life-threatening condition.",tag:"Heat",tc:"tag-heat",urgent:true,
+   warn:"🚨 Heatstroke kills. Call 911 and cool immediately.",
+   steps:["Signs: temperature above 40°C, hot DRY skin (no sweating), confusion, loss of consciousness.","Call 911 immediately. Move to cool shaded area.","Cool rapidly: remove clothing, apply cool wet cloths to neck/armpits/groin, fan actively.","If conscious: give small sips of cool water.","Apply ice packs wrapped in cloth to armpits and neck — rapid cooling is the priority.","Do NOT give aspirin or paracetamol. Monitor until help arrives."]},
+  {id:28,title:"Heat Exhaustion",time:"15–20 min",desc:"Treat heat exhaustion before it becomes heatstroke.",tag:"Heat",tc:"tag-heat",
+   warn:"⚠️ Heat exhaustion can progress to life-threatening heatstroke quickly.",
+   steps:["Move to cool shaded area. Lie down and elevate legs slightly.","Remove excess clothing. Apply cool wet cloths to skin.","Give cool water in small sips — about 500ml over 30 minutes if conscious.","Fan the person or use air conditioning if available.","Watch for worsening: confusion, high temp, or loss of consciousness = call 911 (now heatstroke).","Rest at least 24 hours after recovery. Avoid heat exposure."]},
+  {id:29,title:"Hypothermia",time:"10–15 min",desc:"Treat dangerous body temperature loss.",tag:"Heat",tc:"tag-heat",urgent:true,
+   warn:"⚠️ Do NOT rub limbs vigorously — this can cause heart problems.",
+   steps:["Signs: intense shivering, slurred speech, slow breathing, confusion, pale cold skin, loss of consciousness.","Move to warm sheltered area. Handle gently — rough movement can trigger cardiac arrest.","Remove wet clothing. Cover with dry blankets, including head. Prioritise core warmth.","Give warm (NOT hot) drinks only if fully conscious — no alcohol.","Skin-to-skin warmth under blankets is very effective.","Call 911 for severe hypothermia. Do NOT rewarm too rapidly — warm in stages."]},
+  // DROWNING
+  {id:30,title:"Drowning & Near-Drowning",time:"Immediate — call 911",desc:"Respond safely to a drowning emergency.",tag:"Drowning",tc:"tag-drown",urgent:true,
+   warn:"🚨 Even 'recovered' drowning victims MUST go to hospital — secondary drowning can occur hours later.",
+   steps:["NEVER enter water without proper training — throw rope, lifebuoy, or extend a branch.","Once out of water: call 911 immediately.","Check for breathing. If not: start 5 rescue breaths immediately, then full CPR.","Do NOT wait for water to be coughed up — start CPR immediately.","Keep person horizontal to reduce cardiac arrest risk from pressure change.","Go to hospital even if person seems fully recovered."]},
+  // EYE INJURIES
+  {id:31,title:"Chemical in Eye",time:"15–20 min",desc:"Emergency treatment for chemical eye exposure.",tag:"Eye",tc:"tag-eye",urgent:true,
+   warn:"🚨 Every second matters — immediate flushing prevents permanent blindness.",
+   steps:["Act immediately — flush the eye with clean running water or sterile saline for 20 minutes.","Hold eyelid open with fingers. Let water run from inner corner to outer.","Remove contact lenses if present and if easy to remove.","Do NOT rub the eye — this spreads the chemical further.","Seek emergency eye care urgently after flushing. Bring chemical container.","Do NOT patch the eye or apply any medication before medical assessment."]},
+  {id:32,title:"Foreign Object in Eye",time:"5–10 min",desc:"Safely remove small particles from the eye.",tag:"Eye",tc:"tag-eye",
+   warn:"⚠️ If object is embedded, do NOT attempt removal — cover and seek care.",
+   steps:["Ask person to blink rapidly — tears may naturally flush out small particles.","Wash hands thoroughly before touching around eye.","Pull upper eyelid over lower eyelid — the lashes may brush away debris.","Flush gently with clean water or sterile eyewash from inner to outer corner.","Do NOT rub the eye or try to remove embedded or sharp objects.","Seek medical care if object remains, vision is affected, or pain persists."]},
+  // MENTAL HEALTH
+  {id:33,title:"Panic Attack",time:"10–20 min",desc:"Help someone through an acute panic attack.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Panic attacks feel like heart attacks — reassurance is key. If unsure, call 911.",
+   steps:["Stay calm yourself — your calm is contagious and reassuring.","Guide the person: 'You are safe. This will pass. I am here with you.'","Encourage slow breathing: breathe in for 4 seconds, hold 2, out for 6. Do this together.","5-4-3-2-1 grounding: name 5 things you see, 4 you hear, 3 you can touch, 2 you smell, 1 you taste.","Keep them still — movement increases symptoms.","Seek medical evaluation if it's their first panic attack or symptoms don't improve within 20 minutes."]},
+  {id:34,title:"Suspected Suicide Risk",time:"Immediate support",desc:"Support someone expressing suicidal thoughts.",tag:"Mental",tc:"tag-mental",urgent:true,
+   warn:"🚨 Take all mentions of suicide seriously. Your response can save a life.",
+   steps:["Take them seriously. Do NOT dismiss or minimise — say: 'I hear you. I'm here with you.'","Ask directly: 'Are you thinking about ending your life?' — asking does NOT plant the idea.","Listen without judgement. You don't need to fix everything — your presence matters.","Remove access to means if safe to do so (medication, sharp objects, firearms).","Do NOT leave them alone if risk is immediate.","Call mental health crisis line or 911 for immediate risk. In Uganda: Kampala 0800-21-21-21."]},
+  {id:35,title:"Seizure",time:"3–5 min",desc:"Safely assist someone having a seizure.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Call 911 if: first seizure, lasts 5+ min, no recovery, or pregnant.",
+   steps:["Stay calm and time the seizure from start.","Clear the area of sharp/hard objects. Do NOT restrain the person — let them move.","Protect the head: place something soft (folded jacket) under head.","Do NOT put anything in their mouth — this is a dangerous myth.","Turn gently on their side (recovery position) after convulsions stop — if possible.","After: be reassuring and calm. Person may be confused ('postictal phase') for 15–30 min."]},
+  // DIABETIC
+  {id:36,title:"Low Blood Sugar (Hypoglycaemia)",time:"5–10 min",desc:"Treat a diabetic person with dangerously low blood sugar.",tag:"Diabetic",tc:"tag-diab",urgent:true,
+   warn:"⚠️ If unconscious, do NOT give anything by mouth. Call 911.",
+   steps:["Signs: shaking, sweating, pale, confused, rapid heartbeat, hunger, weakness.","If conscious and can swallow: give 15–20g fast-acting sugar — 3 glucose tablets, 150ml fruit juice, or 5 sugar lumps.","Wait 15 minutes and recheck. If still symptomatic, repeat once.","Once improved, give a snack (biscuit, bread) to maintain sugar levels.","If unconscious or cannot swallow: DO NOT give food or drink. Call 911 immediately.","Lay in recovery position if unconscious. Provide glucagon injection if trained and available."]},
+  {id:37,title:"High Blood Sugar (Hyperglycaemia)",time:"30–60 min",desc:"Recognise and respond to high blood sugar crisis.",tag:"Diabetic",tc:"tag-diab",
+   warn:"⚠️ Diabetic ketoacidosis (DKA) is life-threatening. Call 911 for severe symptoms.",
+   steps:["Signs: excessive thirst/urination, fatigue, blurred vision, fruity breath, nausea, abdominal pain.","Encourage drinking water — only if conscious and stable.","If person has insulin and knows their regimen: assist them to follow it.","Do NOT give sugar or sweet drinks.","Seek medical attention — even moderate hyperglycaemia needs assessment.","Call 911 if: unconscious, rapid breathing, fruity breath (possible DKA), or symptoms are severe."]},
+  // ELECTRIC
+  {id:38,title:"Electric Shock",time:"Immediate — call 911",desc:"Respond safely to a victim of electrocution.",tag:"Electric",tc:"tag-elect",urgent:true,
+   warn:"🚨 Do NOT touch the person before the power source is OFF — you will be electrocuted.",
+   steps:["Do NOT touch the person until power source is switched off or disconnected.","Switch off power at source, mains, or fuse box. Use a dry wooden stick to move source away — NOT metal.","Once safe to touch: call 911 immediately.","Check breathing. If not breathing: begin CPR.","Lay person flat. Treat any burns with cool running water.","Even mild shocks must be evaluated at hospital — internal burns and heart rhythm problems can develop later."]},
+  {id:39,title:"Lightning Strike",time:"Immediate — call 911",desc:"Respond to a victim of lightning strike.",tag:"Electric",tc:"tag-elect",urgent:true,
+   warn:"🚨 Lightning strike victims are NOT electrically charged — safe to touch immediately.",
+   steps:["It is SAFE to touch lightning victims — they carry no residual electric charge.","Move to safety if storm still active. Call 911 immediately.","Check for breathing and pulse. Begin CPR if not breathing — lightning victims have high survival rate with prompt CPR.","Treat visible burns with cool running water.","Keep person warm and monitor for shock.","All lightning strike victims need hospital evaluation — cardiac arrhythmias can develop later."]},
+  // MORE GUIDES
+  {id:40,title:"Head Injury & Concussion",time:"10–15 min",desc:"Assess and manage head trauma safely.",tag:"Fracture",tc:"tag-frac",urgent:true,
+   warn:"⚠️ Never leave a head injury victim alone. Call 911 for any loss of consciousness.",
+   steps:["Call 911 for: loss of consciousness, memory loss, seizure, vomiting, severe headache, confusion.","Keep person still and calm. Do NOT remove helmet if wearing one.","If no spinal injury suspected: sit person upright in comfortable position.","Apply gentle pressure to cuts but do NOT press firmly on skull fracture areas.","Do NOT give aspirin or ibuprofen — these thin blood. Paracetamol is safer.","Watch for 24 hours: increasing headache, repeated vomiting, difficulty waking = seek care immediately."]},
+  {id:41,title:"Fainting (Syncope)",time:"3–5 min",desc:"Help someone who has fainted or is about to faint.",tag:"Cardiac",tc:"tag-cardiac",
+   warn:"⚠️ Do NOT give water to an unconscious person.",
+   steps:["If about to faint: help sit or lie down immediately to prevent injury from falling.","Loosen tight clothing around neck, chest, and waist.","Raise legs 30cm above heart level if no injury suspected — increases blood flow to brain.","Ensure good ventilation. Loosen anything tight.","If unconscious, breathing: recovery position. Time unconsciousness.","If no recovery within 1 minute, or person has chest pain/breathing difficulty: call 911."]},
+  {id:42,title:"Asthma Attack",time:"5–15 min",desc:"Help someone through a severe asthma attack.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"⚠️ A severe asthma attack is life-threatening. Call 911 if no relief in 10 minutes.",
+   steps:["Stay calm. Help the person sit upright — leaning slightly forward is most effective.","Give their reliever inhaler (usually blue): 1 puff every 30–60 seconds, up to 10 puffs.","Use a spacer if available — improves delivery significantly.","Call 911 if: no improvement after 10 puffs, symptoms severe, can barely speak, or no inhaler.","Do NOT lie the person down — upright is best for breathing.","If waiting for ambulance: repeat inhaler every 10–15 minutes. Note doses given."]},
+{id:43,title:"Febrile Seizure (Child)",time:"3–5 min",desc:"Respond to a seizure caused by high fever in a child.",tag:"Mental",tc:"tag-mental",urgent:true,
+   warn:"🚨 Call 911 if seizure lasts more than 5 minutes or child doesn't recover.",
+   steps:["Stay calm — febrile seizures are frightening but rarely cause harm.","Time the seizure from start. Clear area of hard or sharp objects.","Do NOT restrain the child or put anything in their mouth.","Place child on their side (recovery position) to protect airway after convulsions stop.","Cool the fever after the seizure: remove excess clothing, give paracetamol syrup if conscious and able to swallow.","Seek medical care after any febrile seizure, even if child appears to recover fully."]},
+  {id:44,title:"Baby Not Breathing (Infant CPR)",time:"Immediate — call 911",desc:"Perform CPR on a non-breathing baby under 12 months.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Use very gentle force. Too much pressure can injure an infant's chest.",
+   steps:["Call 911 immediately or have someone call while you begin.","Lay baby on a firm, flat surface. Tilt head back GENTLY — chin slightly up only.","Give 5 initial rescue breaths: seal your mouth over baby's mouth AND nose, give tiny gentle puffs until chest rises.","30 chest compressions: place 2 fingers on centre of chest just below nipple line. Press down 4cm at 100–120/min.","Continue 30:2 cycle. After 1 minute of CPR if alone — call 911 then continue.","Use infant AED pads if available. Continue until help arrives or baby breathes."]},
+  {id:45,title:"Meningitis — Recognising Signs",time:"Immediate — call 911",desc:"Identify meningitis early — minutes save lives.",tag:"Mental",tc:"tag-mental",urgent:true,
+   warn:"🚨 Bacterial meningitis can kill within 24 hours. Act immediately.",
+   steps:["Classic signs: severe headache, stiff neck, high fever, sensitivity to light, nausea, vomiting.","Glass test: press a clear glass firmly against a red/purple rash — if rash does NOT fade, call 911 immediately (possible meningococcal septicaemia).","In babies: bulging fontanelle (soft spot), high-pitched cry, refusing feeds, floppy or rigid body.","Call 911 immediately if ANY of these signs are present — do not wait to see if it improves.","Keep person calm and in a comfortable position. Dim the lights if sensitivity to light is present.","Do NOT give aspirin. Paracetamol for fever only if person is conscious and able to swallow."]},
+  {id:46,title:"Child Swallowed a Foreign Object",time:"10–15 min",desc:"Respond when a child swallows a coin, button, or battery.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 Button batteries are life-threatening — seek emergency care immediately if swallowed.",
+   steps:["If child is choking and cannot breathe: treat as choking emergency immediately (see Choking guide).","If child is breathing normally after swallowing object: stay calm and call Poison Control or 111.","Do NOT induce vomiting or give food or water.","Button batteries: EMERGENCY — they can cause severe internal burns within 2 hours. Go to A&E immediately.","Magnets (multiple): also emergency — they attract through intestinal walls causing perforation. Seek emergency care.","For coins and soft objects: usually pass naturally — monitor for pain, vomiting, fever, breathing difficulty. Seek X-ray to confirm location."]},
+
+  // ── EYE & FACE EMERGENCIES ──
+  {id:47,title:"Black Eye (Periorbital Haematoma)",time:"10–15 min",desc:"Treat a bruised eye after a blow to the face.",tag:"Eye",tc:"tag-eye",
+   warn:"⚠️ Seek care if vision is affected, eye is red inside, or pupil is abnormal.",
+   steps:["Apply an ice pack wrapped in cloth to the eye area for 15–20 minutes every hour for the first 24 hours.","Do NOT apply direct pressure to the eye itself.","Keep head elevated to reduce swelling.","Do NOT apply raw meat — this is a myth and causes infection risk.","Take paracetamol for pain — NOT ibuprofen initially if bruising is severe.","Seek medical care if: vision changes, double vision, eye pain, eye movement restricted, or if head injury occurred."]},
+  {id:48,title:"Bleeding from Ear",time:"5–10 min",desc:"Respond to blood draining from the ear canal.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 Blood from the ear after a head injury can indicate a skull fracture.",
+   steps:["Do NOT plug or block the ear — blocking may increase pressure on the brain.","Tilt the head gently to the injured side to allow drainage.","Cover the ear loosely with a clean pad — do not press firmly.","Keep the person still and calm. Do not let them eat or drink.","Call 911 if blood from ear follows a head injury, fall, or blow.","Seek immediate medical attention — all ear bleeding requires urgent assessment."]},
+  {id:49,title:"Knocked-Out Tooth",time:"1–30 min",desc:"Save a knocked-out adult tooth within the golden window.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Act within 30 minutes — replanting is possible if done quickly.",
+   steps:["Find the tooth immediately. Handle by the crown (top) only — do NOT touch the root.","If dirty: rinse GENTLY with milk or clean water for 10 seconds — do NOT scrub.","Replant if possible: push gently into socket, have person bite on clean cloth to hold it. This is the best outcome.","If cannot replant: store tooth in a cup of milk, or between cheek and gum of adult (not child).","Do NOT store in water, do NOT let it dry out, do NOT wrap in tissue.","Get to a dentist or A&E WITHIN 30 MINUTES — every minute reduces success of reimplantation."]},
+  {id:50,title:"Bleeding Gums / Mouth Wound",time:"5–10 min",desc:"Control bleeding from mouth, tongue, or gums.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Bite wounds inside the mouth can be deceptive — seek care if bleeding won't stop.",
+   steps:["Rinse mouth gently with cool water to see the extent of the wound.","Apply pressure using a clean folded cloth or gauze — bite down gently to hold.","For tongue wound: apply firm pressure with folded gauze for 5–10 minutes continuously.","Apply ice wrapped in cloth to outside of face/lip to reduce swelling.","Do NOT rinse with alcohol-based mouthwash — this irritates.","Seek care if: bleeding doesn't stop in 15 min, wound is deep/gaping, or caused by animal bite."]},
+
+  // ── ENVIRONMENTAL EMERGENCIES ──
+  {id:51,title:"Flash Flood Emergency",time:"Immediate",desc:"React safely during a sudden flash flood.",tag:"Drowning",tc:"tag-drown",urgent:true,
+   warn:"🚨 Just 15cm of fast-moving water can knock you off your feet. Never walk through flood water.",
+   steps:["Move immediately to higher ground — do NOT wait.","Do NOT walk or drive through flood water — 30cm of water can move a car.","If trapped in a vehicle with rising water: open window or door while still possible. Do NOT kick windscreen until water equalises.","If swept into water: float on back, feet downstream, steer towards bank.","Do NOT touch flood water if near electricity sources — risk of electrocution.","Call emergency services when safe. Do not return until authorities confirm it is safe."]},
+  {id:52,title:"Fire — Person on Fire",time:"Immediate",desc:"Stop, drop and roll — and help someone on fire.",tag:"Burn",tc:"tag-burn",urgent:true,
+   warn:"🚨 Stop, Drop, Roll. Do NOT run — running fans the flames.",
+   steps:["STOP — do not let the person run. Running fans the flames.","DROP — to the ground immediately.","ROLL — roll over and over to smother the flames. Cover face with hands.","If helping someone else: use a blanket, coat or rug to smother flames — smother don't fan.","Call 911 immediately once flames are out.","Cool the burns under running water for 20 minutes. Do NOT remove burned clothing."]},
+  {id:53,title:"Earthquake — During Shaking",time:"Immediate",desc:"Protect yourself during an earthquake.",tag:"Electric",tc:"tag-elect",
+   warn:"⚠️ Do NOT run outside during shaking — most injuries happen from falling debris.",
+   steps:["DROP to hands and knees — this prevents being knocked over.","COVER under a sturdy table or desk. Cover head and neck with arms if no cover available.","HOLD ON and stay in position until shaking stops.","Away from windows, outside walls, and anything that can fall.","If outdoors: move away from buildings, power lines, trees. Drop to the ground and protect head.","After shaking stops: expect aftershocks. Check for injuries. Do not use elevators. Evacuate if building is damaged."]},
+  {id:54,title:"Severe Thunderstorm / Lightning Safety",time:"During storm",desc:"Stay safe during thunder, lightning, and severe storms.",tag:"Electric",tc:"tag-elect",
+   warn:"⚠️ If you can hear thunder, you are close enough to be struck by lightning.",
+   steps:["Move indoors immediately — a substantial building or a hard-topped vehicle.","Stay away from windows, doors, and plumbing during the storm.","Do NOT shelter under trees, on hilltops, in open fields, or near metal fences.","If caught outside with no shelter: crouch low on the balls of your feet. Do NOT lie flat. Move away from tall objects.","If in a group outdoors: spread out — do not huddle together.","Wait 30 minutes after the last thunder before going outside."]},
+  {id:55,title:"Road Traffic Accident (RTA)",time:"Immediate — call 911",desc:"Respond safely at the scene of a road traffic accident.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 Always make the scene safe first — you cannot help if you become a victim.",
+   steps:["Make scene safe: switch off ignition of vehicles if safe, warn oncoming traffic with hazard lights or red triangle.","Call 911 immediately. Give exact location, number of people, and severity.","Do NOT move injured people unless there is immediate danger of fire or explosion.","Check for breathing. If not breathing: begin CPR. Treat severe bleeding with direct pressure.","Assume spinal injury in all serious accidents — keep head still and tell person not to move.","Stay with casualties until help arrives. Reassure them calmly and keep them warm."]},
+  {id:56,title:"Crush Injury",time:"Immediate — call 911",desc:"Respond when someone is trapped under heavy weight.",tag:"Fracture",tc:"tag-frac",urgent:true,
+   warn:"🚨 Releasing a crush injury after 15+ min can cause life-threatening 'crush syndrome'. Call 911 before freeing.",
+   steps:["Call 911 BEFORE attempting to free the person if trapped more than 15 minutes.","Do NOT suddenly release a long-crush victim without medical support — toxins flood the bloodstream.","Keep person calm and still. Do NOT give food or water.","If safe to do so, control any visible bleeding with gentle pressure.","Keep the person warm. Monitor breathing and pulse continuously.","Let paramedics lead the release if crush duration is unknown or prolonged."]},
+
+  // ── OBSTETRIC / REPRODUCTIVE EMERGENCIES ──
+  {id:57,title:"Emergency Childbirth",time:"Immediate — call 911",desc:"Assist with an unexpected delivery outside hospital.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 Call 911 immediately. They will guide you over the phone.",
+   steps:["Call 911 immediately — the operator will guide you step by step.","Lay mother on her back or side. Keep warm and calm. Wash hands thoroughly.","Do NOT pull the baby — let delivery happen naturally with mother's pushes.","Support the baby's head as it emerges. Gently support the body as it follows.","Keep the baby warm: dry immediately with a towel and place on mother's chest skin-to-skin. Cover both.","Do NOT cut the cord unless instructed by emergency services. Deliver placenta naturally — do not pull."]},
+  {id:58,title:"Miscarriage — Supporting Someone",time:"As needed",desc:"Provide first aid and emotional support during miscarriage.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Seek medical care for heavy bleeding, severe pain, or tissue passage.",
+   steps:["Stay calm and supportive. Ask what the person needs from you.","For heavy bleeding: use sanitary pads — do NOT use tampons. Keep any passed tissue for medical analysis.","Manage pain with paracetamol (not ibuprofen if possible, and not aspirin).","Seek emergency care if: soaking more than 1 pad per hour, severe one-sided pain (possible ectopic), fever, or dizziness.","Keep the person warm and hydrated if they can drink.","Offer emotional support — a miscarriage is a traumatic loss. Listen without judgement."]},
+  {id:59,title:"Eclampsia (Seizure in Pregnancy)",time:"Immediate — call 911",desc:"Manage life-threatening seizures in a pregnant person.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Eclampsia is life-threatening. Call 911 before anything else.",
+   steps:["Call 911 immediately.","Do NOT restrain the person. Clear area of dangerous objects.","After seizure: place in left lateral (left-side) recovery position — this takes pressure off the major blood vessel.","Do NOT put anything in the mouth.","Monitor breathing continuously. Begin CPR if breathing stops.","Note time and duration of seizure for emergency responders."]},
+
+  // ── MENTAL HEALTH / BEHAVIOURAL ──
+  {id:60,title:"Violent / Aggressive Behaviour",time:"As needed",desc:"Safely manage an aggressive or violent person.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Your safety is the priority. Do NOT physically restrain unless trained.",
+   steps:["Stay calm. Use a low, steady voice. Do not shout or argue.","Give the person space — do not crowd or block their exit.","Do not make sudden movements. Keep hands visible and open.","Remove objects that could be used as weapons if safe to do so.","Create an exit path for yourself. Position yourself near a door.","Call police if violence is imminent or has occurred. Do not put yourself at risk."]},
+  {id:61,title:"Alcohol / Drug Psychosis",time:"As needed — call 911",desc:"Respond to drug-induced psychosis or severe intoxication.",tag:"Mental",tc:"tag-mental",urgent:true,
+   warn:"⚠️ Do not argue with delusions. Agree to disagree and focus on safety.",
+   steps:["Stay calm and non-confrontational. Speak in short, simple, clear sentences.","Do not argue with what they say or try to convince them reality is different.","Reduce stimulation: lower lights, reduce noise, limit the number of people present.","Call 911 if person is a danger to themselves or others, or if you cannot keep them safe.","Keep person away from stairs, roads, or other hazards.","Monitor breathing. If unconscious: recovery position and call 911 immediately."]},
+  {id:62,title:"Grief Crisis",time:"As needed",desc:"Support someone in acute emotional distress or grief crisis.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ If person is at risk of self-harm, follow the Suicide Risk guide immediately.",
+   steps:["Be present. You do not need to say the right thing — just being there matters enormously.","Listen without trying to fix. Avoid 'at least...' statements — they minimise pain.","Allow expression: crying, anger, and silence are all natural and healthy.","Offer practical help: water, food, a blanket, company.","Gently check: 'Are you having thoughts of harming yourself?' — asking is safe and important.","Connect to support: family, community leaders, or a mental health line if the person consents."]},
+
+  // ── CARDIAC / RESPIRATORY ──
+  {id:63,title:"Palpitations / Irregular Heartbeat",time:"5–30 min",desc:"Respond to a rapid, fluttering or skipping heartbeat.",tag:"Cardiac",tc:"tag-cardiac",
+   warn:"⚠️ Call 911 if accompanied by chest pain, fainting, or shortness of breath.",
+   steps:["Have the person sit down and rest immediately. Loosen tight clothing.","Vagal manoeuvres if no underlying condition: bear down as if straining, or splash cold water on the face.","Monitor pulse: is it very fast (over 150/min), irregular, or faint?","Do NOT give coffee, stimulants, or nicotine.","Call 911 if: chest pain, fainting, shortness of breath, palpitations last more than 30 min, or first episode.","Even if palpitations resolve: arrange medical assessment — ECG and cardiovascular check recommended."]},
+  {id:64,title:"Hyperventilation",time:"5–15 min",desc:"Help someone who is over-breathing and panicking.",tag:"Cardiac",tc:"tag-cardiac",
+   warn:"⚠️ Do NOT use a paper bag — this is outdated and can be dangerous.",
+   steps:["Reassure the person calmly: 'You are safe. Your breathing will slow down. I am here.'","Coach breathing: breathe IN for 4 counts, OUT for 6 counts. Do it together.","Do NOT use a paper bag — this reduces oxygen and can be dangerous.","Have the person sit or lie down in a comfortable position.","Remove triggers: step away from crowded, noisy, or stressful environments if possible.","If breathing does not slow in 10 minutes, or chest pain develops — call 911 to rule out cardiac cause."]},
+  {id:65,title:"Collapsed Lung (Pneumothorax)",time:"Immediate — call 911",desc:"Recognise and respond to a collapsed lung.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 A tension pneumothorax is rapidly fatal. Call 911 immediately.",
+   steps:["Signs: sudden sharp chest pain, shortness of breath, reduced breath sounds on one side, trachea shifted.","Call 911 immediately.","Sit person upright or slightly leaning towards injured side — this helps remaining lung function.","For open chest wound: cover with 3-sided seal (tape 3 sides of plastic to wound, leave one side open to allow air escape).","Keep calm and still. Monitor breathing continuously.","Do NOT give food or water. Stay with person until emergency services arrive."]},
+  {id:66,title:"Pulmonary Oedema (Fluid in Lungs)",time:"Immediate — call 911",desc:"Respond to acute fluid build-up in the lungs.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Pulmonary oedema is a medical emergency. Call 911 immediately.",
+   steps:["Signs: extreme difficulty breathing, frothy/pink sputum, severe anxiety, cold clammy skin, sitting upright to breathe.","Call 911 immediately.","Sit person upright — do NOT lie them flat. Dangling legs over the side of a bed/chair helps.","Loosen all tight clothing around neck and chest.","Give oxygen if available and trained to do so.","Stay calm. Reassure the person. Keep them still and warm until help arrives."]},
+
+  // ── WOUNDS & SKIN ──
+  {id:67,title:"Puncture Wound",time:"10–15 min",desc:"Clean and manage a deep puncture or stab wound.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"⚠️ Deep puncture wounds can look small but cause significant internal damage.",
+   steps:["Call 911 if: wound is to chest, abdomen, neck, or head — or if object is still embedded.","Do NOT remove an embedded object — stabilise it in place with padding around it.","For non-embedded wounds: allow to bleed briefly to flush bacteria, then apply firm direct pressure.","Wash hands. Clean wound thoroughly with soap and water for 5 minutes.","Do NOT close a puncture wound with tape — it needs to drain. Cover loosely.","Seek medical care for all significant puncture wounds — tetanus booster and antibiotic assessment needed."]},
+  {id:68,title:"Amputation / Severed Limb",time:"Immediate — call 911",desc:"Respond to traumatic amputation of a limb or digit.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 Replantation is possible within hours. Speed and correct preservation are critical.",
+   steps:["Call 911 immediately.","Control bleeding: apply tourniquet 5–8cm above the stump if limb amputation. Note time applied. Apply firm pressure to digits.","Do NOT clean the stump vigorously. Cover with a clean damp cloth.","Preserve the severed part: rinse gently with saline or clean water, wrap in moist clean cloth, seal in a plastic bag, and place bag in ice water (NOT directly on ice).","Label the bag with the time of injury and rush to hospital with the casualty.","Keep person warm, lying down, and monitor for shock (pale, rapid breathing, confusion)."]},
+  {id:69,title:"Infected Wound",time:"Ongoing care",desc:"Identify and manage wound infection before it spreads.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Spreading red lines from a wound toward the body can indicate blood poisoning — seek urgent care.",
+   steps:["Signs of infection: increased redness, warmth, swelling, pus/discharge, worsening pain after 24–48 hrs, fever.","Clean thoroughly with soap and water. Irrigate with sterile saline if available.","Apply antiseptic (povidone-iodine or chlorhexidine). Change dressing daily.","Do NOT close infected wounds — they need to drain.","Seek medical care for antibiotic treatment. Deep or spreading infections need professional assessment.","Emergency signs — seek urgent care: red streaks spreading from wound, high fever, extreme swelling, or drowsiness."]},
+  {id:70,title:"Blister Care",time:"5 min",desc:"Safely manage and protect blisters.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Do NOT pop blisters if caused by burns — see the burn guides.",
+   steps:["Clean the area with antiseptic.","For friction blisters: if small and not painful, leave intact — the fluid protects against infection.","If blister is very large, painful, or in a pressure area: drain with a sterilised needle at the edge only. Do NOT remove the skin roof.","Apply antibiotic ointment and cover with a blister plaster or padded bandage.","Keep area clean and dry. Change dressing daily.","Seek care if signs of infection develop: redness, pus, warmth, or spreading redness."]},
+
+  // ── TOXIC EXPOSURES / ENVIRONMENT ──
+  {id:71,title:"Malaria — Severe Attack",time:"Immediate — call 911",desc:"Recognise and respond to a severe malaria episode.",tag:"Mental",tc:"tag-mental",urgent:true,
+   warn:"🚨 Severe malaria is life-threatening. Seek hospital treatment immediately.",
+   steps:["Signs of severe malaria: high fever (above 39°C), rigors (shaking chills), severe headache, confusion, vomiting, seizures, jaundice, or unconsciousness.","Call 911 or transport to hospital immediately — severe malaria needs IV antimalarial treatment.","Lay person in recovery position if vomiting or unconscious.","Give paracetamol for fever. Do NOT give aspirin to children.","Cool the person with cool (not cold) wet cloths if fever is very high.","Do NOT delay hospital care — cerebral malaria can cause death or permanent brain damage within hours."]},
+  {id:72,title:"Typhoid Fever — Recognition",time:"Ongoing",desc:"Recognise and respond to suspected typhoid fever.",tag:"Poisoning",tc:"tag-pois",
+   warn:"⚠️ Typhoid can cause intestinal perforation — a life-threatening emergency.",
+   steps:["Signs: sustained high fever (39–40°C), headache, fatigue, loss of appetite, abdominal pain, diarrhoea or constipation, rose-coloured spots on torso.","Seek medical care promptly — blood and stool tests needed for diagnosis.","Ensure adequate hydration: oral rehydration salts (ORS) are critical.","Strict hygiene: wash hands frequently, especially before eating and after toilet.","Do NOT give anti-diarrhoeal drugs — they can worsen complications.","Emergency: if person develops sudden severe abdominal pain, rigidity, or falls unconscious — call 911 (possible perforation)."]},
+  {id:73,title:"Cholera — Severe Dehydration",time:"Immediate — call 911",desc:"Manage life-threatening dehydration from cholera.",tag:"Poisoning",tc:"tag-pois",urgent:true,
+   warn:"🚨 Cholera can kill within hours through dehydration. Rehydration is the emergency treatment.",
+   steps:["Signs: sudden profuse watery diarrhoea ('rice-water' stools), vomiting, rapid dehydration, muscle cramps, sunken eyes, dry mouth, weak pulse.","Call 911 or rush to hospital — severe cholera needs IV fluids immediately.","Begin oral rehydration immediately if conscious and able to swallow: ORS solution (1L water, 6 tsp sugar, 0.5 tsp salt) or commercial ORS.","Give ORS continuously — aim for 200–400ml after each loose stool.","Do NOT give plain water alone — it lacks the electrolytes needed.","Strict hygiene: cholera spreads via faecal contamination of water and food. Isolate waste."]},
+  {id:74,title:"Rabies Exposure — Animal Bite/Scratch",time:"Immediate — within hours",desc:"Emergency wound care after potential rabies exposure.",tag:"Bite",tc:"tag-bite",urgent:true,
+   warn:"🚨 Once rabies symptoms appear, the disease is almost always fatal. Prevention is everything.",
+   steps:["Wash the wound IMMEDIATELY and thoroughly with soap and water for at least 15 minutes — this is the single most important step.","Apply iodine or 70% ethanol alcohol after washing.","Do NOT close or suture the wound immediately — allow it to drain.","Go to hospital immediately for post-exposure prophylaxis (PEP) — rabies vaccine and immunoglobulin. Time is critical.","Report the animal if possible — its vaccination status affects the treatment protocol.","Begin PEP even if you are not sure — it is always better to treat and be safe."]},
+  {id:75,title:"Scald Injury (Hot Liquid Burns)",time:"5–10 min",desc:"Treat burns from hot water, oil, soup, or beverages.",tag:"Burn",tc:"tag-burn",
+   warn:"⚠️ Hot oil causes deeper burns than hot water — treat urgently.",
+   steps:["Act immediately — cool under running cool water for 20 minutes.","Remove saturated clothing immediately before it traps heat — cut around anything stuck.","Do NOT apply ice, butter, toothpaste, or any creams.","Cover loosely with cling film or a clean non-fluffy material.","For large scalds or scalds to face/hands/genitals — seek emergency care.","Children and elderly are more vulnerable — always seek medical assessment for scalds in these groups."]},
+
+  // ── MUSCULOSKELETAL / SPORTS ──
+  {id:76,title:"Sprained Ankle",time:"15–20 min",desc:"Treat an ankle sprain with the PRICE method.",tag:"Fracture",tc:"tag-frac",
+   warn:"⚠️ If you cannot bear any weight at all, suspect a fracture — get an X-ray.",
+   steps:["PROTECTION: stop activity immediately. Do NOT walk it off if severe.","REST: take weight off the ankle. Use crutches if available.","ICE: apply ice wrapped in cloth for 20 minutes every 2 hours. Do NOT apply ice directly.","COMPRESSION: wrap with an elastic bandage — firm but not tight enough to stop circulation.","ELEVATION: raise ankle above hip level when resting to reduce swelling.","Seek care if: cannot bear weight, severe swelling/bruising, or no improvement after 48 hours."]},
+  {id:77,title:"Muscle Cramp",time:"3–5 min",desc:"Relieve acute muscle cramps safely.",tag:"Fracture",tc:"tag-frac",
+   warn:"⚠️ Frequent cramps may indicate dehydration, mineral deficiency, or circulatory problems.",
+   steps:["Stop the activity immediately.","Gently stretch the cramped muscle: for calf cramp, straighten leg and pull toes toward shin.","Massage the muscle with firm, circular motions.","Apply heat (warm cloth or heating pad) to relax the muscle after stretching.","Drink water or oral rehydration solution — dehydration is a common cause.","Seek care if cramps are frequent, severe, or occur at rest — may indicate vascular or neurological issues."]},
+  {id:78,title:"Tendon Rupture",time:"15–20 min",desc:"Identify and immobilise a ruptured tendon.",tag:"Fracture",tc:"tag-frac",urgent:true,
+   warn:"⚠️ Achilles tendon rupture: you may hear a 'pop' and lose ability to point foot — seek urgent care.",
+   steps:["Signs: sudden sharp pain, a 'snap' or 'pop' sound, inability to use the muscle/joint, visible gap or deformity.","Stop all activity immediately. Do NOT try to test the joint.","Apply ice wrapped in cloth for 20 minutes to reduce swelling.","Immobilise: support in a comfortable position. Do not apply splint tightly.","Elevate the limb to reduce swelling.","Seek urgent orthopaedic care — tendon ruptures often require surgical repair within days."]},
+  {id:79,title:"Heat Cramps",time:"10–15 min",desc:"Treat muscle cramps caused by heat and dehydration during exercise.",tag:"Heat",tc:"tag-heat",
+   warn:"⚠️ Heat cramps can progress to heat exhaustion — stop all activity immediately.",
+   steps:["Stop all physical activity immediately and move to a cool area.","Drink oral rehydration solution or sports drink — water alone is insufficient.","Gently stretch and massage the affected muscles.","Apply cool wet cloths to the skin.","Do NOT continue physical activity for several hours after cramps resolve.","Seek care if cramps are severe, last more than an hour, or are accompanied by weakness, nausea, or dizziness."]},
+
+  // ── NEUROLOGICAL ──
+  {id:80,title:"Migraine Attack",time:"30–120 min",desc:"Provide first aid support during a severe migraine.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Sudden severe 'thunderclap' headache that is worst-ever: call 911 — may be subarachnoid haemorrhage.",
+   steps:["Move person to a quiet, dark, cool room. Minimise light, sound, and smell.","Encourage rest lying down if possible.","Apply a cool or warm compress to the head or neck — whichever the person prefers.","Offer their prescribed migraine medication early in the attack if available.","Encourage small sips of water if nausea allows — dehydration worsens migraine.","Seek emergency care if: worst headache of their life, headache with fever/stiff neck, following head injury, or with neurological symptoms."]},
+  {id:81,title:"Vertigo / Dizziness Attack",time:"5–15 min",desc:"Respond to an acute episode of severe vertigo.",tag:"Mental",tc:"tag-mental",
+   warn:"⚠️ Sudden severe vertigo with hearing loss and tinnitus needs urgent ENT assessment.",
+   steps:["Help person sit or lie down immediately to prevent falling.","Encourage them to fix their gaze on a stationary object — this helps the brain recalibrate.","Keep movements slow and deliberate — sudden head movements worsen vertigo.","Do NOT leave the person alone if symptoms are severe.","Apply cool cloth to forehead if nauseous. Provide a basin if vomiting is likely.","Seek care if: first episode, vertigo with chest pain, slurred speech, double vision, or arm/leg weakness — these indicate possible stroke."]},
+  {id:82,title:"Transient Ischaemic Attack (TIA / Mini-Stroke)",time:"Immediate — call 911",desc:"Respond to a TIA — a warning stroke that must be treated as an emergency.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 A TIA predicts full stroke. Risk is highest in the next 48 hours. Act immediately.",
+   steps:["Use the FAST test: Face drooping, Arm weakness, Speech difficulty, Time to call 911.","Even if symptoms resolve: call 911 or go to A&E immediately — a TIA is a stroke warning.","Do NOT drive the person — call an ambulance.","Note the exact time symptoms started or resolved.","Keep person calm and resting. Do not give food or medication.","Hospital assessment within 24 hours is mandatory — urgent brain scan and anti-clotting treatment is needed."]},
+
+  // ── ABDOMINAL / GI ──
+  {id:83,title:"Appendicitis — Warning Signs",time:"Immediate — call 911",desc:"Recognise appendicitis before it becomes life-threatening.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 A ruptured appendix is life-threatening. Do not delay seeking care.",
+   steps:["Classic signs: pain starting around navel then moving to lower RIGHT abdomen, nausea, vomiting, low-grade fever, loss of appetite.","Do NOT apply heat to the abdomen — this increases risk of rupture.","Do NOT give laxatives or enemas.","Do NOT give painkillers — they mask symptoms and complicate diagnosis.","Seek emergency care immediately — do not eat or drink in case surgery is needed.","If pain suddenly improves dramatically then returns severely: may indicate rupture — call 911."]},
+  {id:84,title:"Severe Abdominal Pain",time:"Immediate — call 911",desc:"Assess and respond to acute severe abdominal pain.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"🚨 Never assume abdominal pain will pass on its own if it is severe.",
+   steps:["Call 911 for: pain scoring 8–10/10, pain with fever, vomiting blood, rigid/boardlike abdomen, or pain after abdominal trauma.","Help person into a comfortable position — usually knees drawn up.","Do NOT give food or water — surgery may be needed.","Do NOT apply heat to abdomen.","Note: location of pain, when it started, what makes it worse or better, any associated symptoms (fever, vomiting, change in bowel habits).","Do NOT delay seeking care — many abdominal emergencies worsen rapidly with time."]},
+  {id:85,title:"Gastric Bleed — Vomiting Blood",time:"Immediate — call 911",desc:"Respond to upper gastrointestinal bleeding.",tag:"Bleeding",tc:"tag-bleed",urgent:true,
+   warn:"🚨 Vomiting blood is always an emergency. Call 911 immediately.",
+   steps:["Call 911 immediately.","Keep person lying down and calm. Do NOT give food or water.","If vomiting: turn on side (recovery position) to prevent choking.","Collect a sample of vomit if possible — the colour and content helps diagnosis.","Monitor for shock: pale skin, rapid weak pulse, fainting, confusion.","Do NOT give aspirin, ibuprofen, or blood thinners — these worsen bleeding."]},
+
+  // ── SKIN / DERMATOLOGICAL ──
+  {id:86,title:"Severe Sunburn",time:"30–60 min",desc:"Treat extensive or severe sunburn safely.",tag:"Burn",tc:"tag-burn",
+   warn:"⚠️ Sunburn with blistering, fever, or chills needs medical attention.",
+   steps:["Move to a cool, shaded area immediately. Get out of the sun.","Cool the skin with cool (NOT cold) water — a cool shower or bath for 10–20 minutes.","Apply aloe vera gel or an after-sun moisturiser. Do NOT apply butter or petroleum jelly.","Drink plenty of water — severe sunburn causes dehydration.","Take paracetamol for pain. Ibuprofen can also help reduce inflammation.","Seek care if: blistering over large areas, fever above 38.5°C, confusion, or sunburn in a child."]},
+  {id:87,title:"Allergic Skin Reaction (Urticaria / Hives)",time:"10–30 min",desc:"Manage an allergic skin rash or widespread hives.",tag:"Anaphylaxis",tc:"tag-ana",
+   warn:"⚠️ If throat tightening, breathing difficulty, or fainting develops — this is anaphylaxis. Use EpiPen and call 911.",
+   steps:["Identify and remove the trigger if known — stop the food, medication, or exposure.","Apply cool wet cloth to affected skin to reduce itching and inflammation.","Give an oral antihistamine (e.g. cetirizine or loratadine) — follow dosage instructions.","Do NOT scratch — this spreads histamine and worsens the reaction.","Calamine lotion can be applied to soothe itching.","Watch for anaphylaxis signs for 2 hours: throat tightness, difficulty breathing, swollen tongue, fainting — treat immediately if these appear."]},
+  {id:88,title:"Chemical on Skin (Dermal Exposure)",time:"15–20 min",desc:"Decontaminate skin after chemical exposure.",tag:"Burn",tc:"tag-burn",urgent:true,
+   warn:"⚠️ Do NOT use neutralising agents — they can cause additional heat reactions.",
+   steps:["Remove contaminated clothing and jewellery immediately. Wear gloves if available.","Flush affected skin with large amounts of cool running water for 20–30 minutes minimum.","Do NOT try to neutralise the chemical with another substance.","Do NOT rub the skin — gentle flushing only.","After flushing: loosely cover affected area with clean, non-fluffy material.","Seek emergency medical care and bring the chemical name or container."]},
+
+  // ── SPECIAL POPULATIONS ──
+  {id:89,title:"Elderly Person — Fall Assessment",time:"10–15 min",desc:"Assess and help an older person who has fallen.",tag:"Fracture",tc:"tag-frac",
+   warn:"⚠️ Hip fractures in the elderly can be life-threatening if not treated promptly.",
+   steps:["Do NOT rush to help them up — first assess for injuries.","Ask: 'Are you in pain? Where?' and 'Can you move your legs/arms?'","Check for obvious deformity, abnormal rotation of hip or leg (suggests hip fracture).","If hip fracture is suspected: do NOT help them up. Call 911. Keep them still and warm.","If no obvious injury and person feels able: help them roll onto their side, then onto hands and knees, then use a sturdy chair to push up.","Arrange medical review — all elderly falls should be assessed for underlying cause and fracture."]},
+  {id:90,title:"Diabetic Foot Emergency",time:"As needed",desc:"Manage a diabetic foot wound or infection promptly.",tag:"Diabetic",tc:"tag-diab",urgent:true,
+   warn:"⚠️ Diabetic foot wounds can deteriorate rapidly. Seek care within 24 hours of any wound.",
+   steps:["Inspect the wound carefully — diabetics often have reduced sensation and may not feel pain even with serious wounds.","Clean gently with saline or clean water. Do NOT use hydrogen peroxide or strong antiseptics on open wounds.","Apply a sterile, non-adherent dressing. Do NOT use tight bandages.","Take all weight off the foot — do NOT walk on a diabetic foot wound.","Seek medical care within 24 hours for any wound — diabetic wounds can become infected and lead to amputation rapidly.","Emergency signs: spreading redness, fever, pus, blackening of tissue, or foul smell — these need immediate hospital care."]},
+  {id:91,title:"Sickle Cell Crisis",time:"Immediate pain management",desc:"Support someone experiencing a sickle cell vaso-occlusive crisis.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 A chest crisis (acute chest syndrome) is life-threatening. Call 911.",
+   steps:["Pain crisis: give prescribed analgesia immediately according to the person's own pain management plan.","Encourage drinking fluids — dehydration triggers and worsens crises.","Apply gentle warmth to painful areas — NOT hot water bottles directly on skin.","Avoid cold temperatures and cold water — triggers sickling.","Seek hospital care if pain is not controlled by home medication within 30 minutes.","EMERGENCY (acute chest syndrome): new chest pain, fever, falling oxygen saturation, breathing difficulty — call 911 immediately."]},
+
+  // ── WATER / AQUATIC ──
+  {id:92,title:"Swimmer's Ear (Otitis Externa)",time:"As needed",desc:"Recognise and initially manage ear canal infection.",tag:"Eye",tc:"tag-eye",
+   warn:"⚠️ Do NOT insert cotton buds — they push infection deeper and damage the canal.",
+   steps:["Keep ear dry: use a towel to gently dry outer ear after swimming. Tilt head to drain.","Do NOT insert cotton buds, fingers, or any object into the canal.","Apply over-the-counter ear drops designed for swimmer's ear if available, following instructions.","Keep ear out of water for 7–10 days.","For pain: paracetamol or ibuprofen.","Seek care if: severe pain, fever, swelling outside the ear, discharge, or hearing loss."]},
+  {id:93,title:"Jellyfish Sting",time:"10–20 min",desc:"Treat a jellyfish sting at the beach.",tag:"Bite",tc:"tag-bite",
+   warn:"⚠️ Box jellyfish stings are life-threatening — call 911 immediately.",
+   steps:["Do NOT rub the sting area — this releases more venom from nematocysts.","Remove tentacles by rinsing with seawater (NOT fresh water). Use tweezers or a card — not bare hands.","Rinse with vinegar for at least 30 seconds if available — neutralises most jellyfish venom.","Immerse in hot water (as hot as tolerable, not scalding) for 20 minutes — this deactivates protein-based venom.","Apply hydrocortisone cream to reduce inflammation.","Seek emergency care for: box jellyfish sting, systemic symptoms (nausea, difficulty breathing, chest pain), or large sting area."]},
+  {id:94,title:"Coral Cut",time:"10–15 min",desc:"Clean and manage a coral reef cut or abrasion.",tag:"Wound",tc:"tag-wound",
+   warn:"⚠️ Coral cuts become infected rapidly — thorough cleaning is essential.",
+   steps:["Rinse wound with large amounts of clean water or saline immediately.","Gently scrub to remove all coral fragments — any remaining pieces cause chronic infection.","Apply antiseptic (povidone-iodine is preferred for marine wounds).","Do NOT close with adhesive strips — coral cuts need to drain.","Cover loosely with a clean dressing. Change daily.","Seek medical care — oral antibiotics are often needed for marine wound infections, and a tetanus booster may be required."]},
+
+  // ── RESPIRATORY INFECTIONS ──
+  {id:95,title:"Severe COVID-19 Symptoms",time:"Immediate — call 911",desc:"Recognise and respond to severe COVID-19 respiratory distress.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Oxygen saturation below 94% or inability to complete a sentence = call 911.",
+   steps:["Emergency signs: persistent chest pain, confusion, inability to wake, bluish lips or face, oxygen saturation below 94%.","Call 911 immediately for any of the above — do NOT drive to hospital if very unwell.","Proning position: lay person face-down (prone) on their stomach — this improves oxygenation significantly.","If pulse oximeter available: monitor oxygen saturation. Below 94% = emergency.","Keep person calm and breathing slowly and deeply.","Isolate to prevent spread. Alert household members to wear masks and distance."]},
+  {id:96,title:"Pneumonia — Recognising Severity",time:"Assess and seek care",desc:"Identify severe pneumonia and respond appropriately.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 In children, rapid breathing is the key warning sign of serious pneumonia.",
+   steps:["Signs: cough, fever, rapid breathing, chest pain, difficulty breathing, confusion in elderly.","Danger signs requiring emergency care: breathing rate >30/min (adult), bluish lips, confusion, cannot drink (child), oxygen saturation below 94%.","Children: rapid breathing + chest indrawing = seek emergency care immediately.","Keep person sitting upright or propped up — this aids breathing.","Ensure hydration if conscious: small sips of water regularly.","All suspected pneumonia needs medical assessment for antibiotic treatment — do not self-treat with antibiotics without guidance."]},
+  {id:97,title:"Sepsis — The Silent Killer",time:"Immediate — call 911",desc:"Recognise sepsis early — every hour counts.",tag:"Cardiac",tc:"tag-cardiac",urgent:true,
+   warn:"🚨 Sepsis kills. 1 in 5 global deaths are caused by sepsis. Act immediately.",
+   steps:["THINK SEPSIS: any infection + 1 or more: confusion, very fast breathing, cold clammy skin, extreme pain, high or very low temperature.","Sepsis 6 warning signs: slurred speech, shivering/shaking, no urination for 12 hours, severe muscle pain, feeling of impending death, extreme breathlessness.","Call 911 immediately. Say 'I think this could be sepsis.'","Do NOT give food or water — IV fluids and antibiotics needed urgently.","Keep person warm and lying down. Monitor breathing and consciousness continuously.","Sepsis requires hospital treatment within 1 hour ('the golden hour') — mortality doubles with each hour of delay."]},
+  {id:98,title:"Tuberculosis (TB) — Suspected Case",time:"Ongoing care",desc:"Recognise TB and take appropriate precautions.",tag:"Cardiac",tc:"tag-cardiac",
+   warn:"⚠️ TB is airborne and highly infectious. Precautions protect you and others.",
+   steps:["Signs of active TB: persistent cough (3+ weeks), blood in sputum, night sweats, unexplained weight loss, fever, fatigue.","Encourage person to seek medical testing immediately — sputum tests and chest X-ray required.","Precautions: ensure good ventilation, open windows; person should wear a mask when near others.","Do NOT isolate completely — social support is vital for treatment adherence.","TB is curable with the correct antibiotic course (minimum 6 months) — support the person to complete treatment.","Contact tracing: anyone in close regular contact should be tested."]},
+  {id:99,title:"Rapid Primary Survey (ABC+D+E)",time:"2–3 min",desc:"Perform a systematic first responder assessment on any casualty.",tag:"Wound",tc:"tag-wound",urgent:true,
+   warn:"⚠️ Always ensure the scene is safe before approaching any casualty.",
+   steps:["A — AIRWAY: Is it open? Tilt head back, lift chin. Look, listen, feel for breathing. Remove visible obstructions.","B — BREATHING: Count breaths for 10 seconds. Normal adult: 12–20/min. Absent/abnormal: begin CPR.","C — CIRCULATION: Check pulse (carotid/wrist). Control major bleeding immediately with direct pressure or tourniquet.","D — DISABILITY: AVPU scale — Alert? Responds to Voice? Responds to Pain? Unresponsive? Check pupil response to light.","E — EXPOSURE / ENVIRONMENT: Expose injury area for assessment. Check for hidden wounds, rashes, medical alert bracelets. Prevent hypothermia.","Call 911 with your findings using the SBAR format: Situation, Background, Assessment, Recommendation."]},
+
+];
+
+const CATS=['Bleeding','Burn','Cardiac','Choking','Fracture','Poisoning','Anaphylaxis','Wound','Heat','Drowning','Eye','Mental','Diabetic','Bite','Electric'];
+const CAT_ICONS={'Bleeding':'🩸','Burn':'🔥','Cardiac':'❤️','Choking':'😮','Fracture':'🦴','Poisoning':'☠️','Anaphylaxis':'💉','Wound':'🩹','Heat':'🌡️','Drowning':'🌊','Eye':'👁️','Mental':'🧠','Diabetic':'💊','Bite':'🐍','Electric':'⚡'};
+const TIPS=["In cardiac arrest, push 5–6cm deep at 100–120 compressions per minute — hard and fast saves lives.","Cool burns under running water for 20 minutes — never use ice, butter or toothpaste.","For adult choking: alternate 5 back blows with 5 abdominal thrusts.","FAST stroke test: Face drooping, Arm weakness, Speech difficulty, Time to call 911.","Always check your own safety FIRST — you can't help if you become a victim.","Recovery position: on side, head tilted back, to keep airway open.","Tourniquets save lives for severe limb bleeding — don't be afraid to use one.","For snakebite: keep still, immobilise, get to hospital fast. Do NOT cut or suck.","After any drowning — even if 'recovered' — go to hospital for secondary drowning risk.","Panic attacks feel like heart attacks. Slow breathing (4-2-6 pattern) is very effective."];
+
+// ===== STATE =====
+let ST=JSON.parse(localStorage.getItem('fastaid3')||'{}');
+ST.user=ST.user||null; ST.viewed=ST.viewed||[]; ST.saved=ST.saved||[];
+ST.searches=ST.searches||0; ST.days=ST.days||[];
+function save(){localStorage.setItem('fastaid3',JSON.stringify(ST));}
+
+let curFilter='All',curGuide=null,authMode='register';
+
+// ===== VIEWS =====
+const ALL_VIEWS=['home','guides','dashboard','profile'];
+function sv(id){
+  ALL_VIEWS.forEach(v=>{
+    const el=document.getElementById('view-'+v); if(el)el.classList.toggle('on',v===id);
+  });
+  // Desktop nav tabs
+  ['home','guides','dashboard'].forEach(v=>{
+    const n=document.getElementById('nl-'+v); if(n)n.classList.toggle('on',v===id);
+  });
+  // Mobile drawer items
+  ALL_VIEWS.forEach(v=>{
+    const d=document.getElementById('dm-'+v); if(d)d.classList.toggle('on',v===id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='dashboard')rdash();
+  if(id==='profile')rprof();
+  if(id==='guides')renderGuidesPage();
+}
+
+// Auth guard — redirect to login if not signed in
+function authGuard(view){
+  if(!ST.user){
+    openAuth('login');
+    toast2('Please sign in to access the Dashboard');
+  } else {
+    sv(view);
+  }
+}
+
+// ===== DRAWER =====
+function toggleDrawer(){
+  const d=document.getElementById('drawer'),o=document.getElementById('droverlay'),h=document.getElementById('ham');
+  const op=d.classList.contains('on');
+  d.classList.toggle('on',!op);o.classList.toggle('on',!op);h.classList.toggle('open',!op);
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('on');
+  document.getElementById('droverlay').classList.remove('on');
+  document.getElementById('ham').classList.remove('open');
+}
+
+// ===== PROFILE DROPDOWN =====
+function toggleProfDrop(){document.getElementById('pdrop').classList.toggle('on');}
+function closeProfDrop(){document.getElementById('pdrop').classList.remove('on');}
+document.addEventListener('click',e=>{
+  const d=document.getElementById('pdrop'),a=document.getElementById('nav-av');
+  if(d&&a&&!a.contains(e.target)&&!d.contains(e.target))d.classList.remove('on');
+});
+
+// ===== GUIDES =====
+function renderGuides(){
+  const q=document.getElementById('sinput').value.toLowerCase();
+  let list=GUIDES;
+  if(curFilter!=='All')list=list.filter(g=>g.tag===curFilter);
+  if(q)list=list.filter(g=>g.title.toLowerCase().includes(q)||g.desc.toLowerCase().includes(q)||g.tag.toLowerCase().includes(q));
+  document.getElementById('guide-count').textContent='('+list.length+' guides)';
+  if(!list.length){document.getElementById('ggrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);"><div style="font-size:44px;margin-bottom:10px;">🔍</div><p style="font-size:15px;">No guides found for "<strong>'+document.getElementById('sinput').value+'</strong>"</p></div>';return;}
+  const offCls2=offlineMode?' offline-card':'';
+  document.getElementById('ggrid').innerHTML=list.map(g=>`
+    <div class="gcard${offCls2}">
+      <div class="gc-top">
+        <div class="gc-title">${g.title}</div>
+        ${g.urgent?'<div class="gc-urgent">🚨</div>':''}
+      </div>
+      <div class="gc-time">⏱️ ${g.time}</div>
+      <div class="gc-desc">${g.desc}</div>
+      <div class="gc-tags"><span class="gc-tag ${g.tc}">${CAT_ICONS[g.tag]||''} ${g.tag}</span></div>
+      <button class="btn-open${g.urgent?' urgent':''}" onclick="openGuide(${g.id})">Open Guide</button>
+    </div>`).join('');
+}
+
+function setF(cat,el){
+  curFilter=cat;
+  document.querySelectorAll('.ftab').forEach(f=>f.classList.remove('on'));
+  el.classList.add('on');
+  renderGuides();
+}
+function filterG(){
+  const q=document.getElementById('sinput').value;
+  if(q.length>0){ST.searches++;save();}
+  renderGuides();
+}
+
+function openGuide(id){
+  const g=GUIDES.find(x=>x.id===id);if(!g)return;
+  curGuide=g;
+  const hdr=document.getElementById('mhdr');
+  hdr.className='modal-hdr '+(g.urgent?'red-hdr':'green-hdr');
+  document.getElementById('m-title').textContent=g.title;
+  document.getElementById('m-time').textContent='⏱️ '+g.time;
+  const mw=document.getElementById('m-warn');
+  if(g.warn){mw.style.display='flex';mw.textContent=g.warn;}else{mw.style.display='none';}
+  document.getElementById('m-steps').innerHTML=g.steps.map((s,i)=>`<li class="step-item"><div class="step-num${g.urgent?' red':''}">${i+1}</div><div class="step-txt">${s}</div></li>`).join('');
+  const isSaved=ST.saved.some(x=>x.id===id);
+  document.getElementById('save-btn').textContent=isSaved?'✅ Saved':'🔖 Save Guide';
+  document.getElementById('guide-modal').classList.add('on');
+  // Track
+  const today=new Date().toDateString();
+  if(!ST.days.includes(today))ST.days.push(today);
+  if(!ST.viewed.find(x=>x.id===id)){ST.viewed.unshift({id,title:g.title,tag:g.tag,date:new Date().toLocaleDateString()});}
+  if(ST.viewed.length>30)ST.viewed.pop();
+  save();
+  refreshHomeRecent();
+  // Track in Firestore
+  if(FIREBASE_ACTIVE&&ST.user?.uid&&!ST.user.uid.startsWith('local_')){
+    db.collection('users').doc(ST.user.uid).update({
+      guidesViewed:firebase.firestore.FieldValue.increment(1),
+      lastActive:firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+    db.collection('users').doc(ST.user.uid).collection('history').doc(String(id)).set({
+      id,title:g.title,tag:g.tag,viewedAt:new Date().toISOString()
+    }).catch(()=>{});
+  }
+}
+function closeGuideModal(){document.getElementById('guide-modal').classList.remove('on');}
+function closeGM(e){if(e.target===document.getElementById('guide-modal'))closeGuideModal();}
+
+function saveGuide(){
+  if(!curGuide)return;
+  const i=ST.saved.findIndex(x=>x.id===curGuide.id);
+  if(i>=0){
+    ST.saved.splice(i,1);
+    document.getElementById('save-btn').textContent='🔖 Save Guide';
+    toast2('Removed from saved guides');
+    // Remove from Firestore
+    if(FIREBASE_ACTIVE&&ST.user?.uid&&!ST.user.uid.startsWith('local_')){
+      db.collection('users').doc(ST.user.uid).collection('saved').doc(String(curGuide.id)).delete().catch(()=>{});
+    }
+  } else {
+    ST.saved.unshift({id:curGuide.id,title:curGuide.title,tag:curGuide.tag});
+    document.getElementById('save-btn').textContent='✅ Saved';
+    toast2('Guide saved! ✅');
+    syncSavedToFirestore();
+    sendSaveNotification(curGuide);
+    // Update Firestore stats
+    if(FIREBASE_ACTIVE&&ST.user?.uid&&!ST.user.uid.startsWith('local_')){
+      db.collection('users').doc(ST.user.uid).update({guidesSaved:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
+    }
+  }
+  save();
+}
+
+// ════════════════════════════════════════════════════════
+// AUTH — Firebase (real) + localStorage fallback
+// ════════════════════════════════════════════════════════
+
+// ── Helpers ──
+function showAuthError(msg){ const el=document.getElementById('auth-error'); if(el){el.textContent=msg;el.style.display='block';} }
+function showAuthSuccess(msg){ const el=document.getElementById('auth-success'); if(el){el.textContent=msg;el.style.display='block';} }
+function clearAuthMsgs(){ ['auth-error','auth-success'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';}); }
+function setAuthLoading(btn,loading){ if(!btn)return; btn.disabled=loading; btn.innerHTML=loading?'<span class="auth-spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>Please wait…':btn._orig||btn.textContent; }
+
+function openAuth(mode){
+  authMode=mode; buildAuthForm();
+  clearAuthMsgs();
+  document.getElementById('auth-modal').classList.add('on');
+  // Show Firebase status note
+  const note=document.getElementById('firebase-status-note');
+  if(note){ note.textContent=FIREBASE_ACTIVE?'🔥 Powered by Firebase — real accounts':'⚙️ Demo mode — add Firebase keys for real accounts'; note.className='firebase-badge'+(FIREBASE_ACTIVE?' active':''); }
+}
+function closeAM(e){ if(e.target===document.getElementById('auth-modal')){ document.getElementById('auth-modal').classList.remove('on'); clearAuthMsgs(); } }
+function switchAuth(mode){ authMode=mode; buildAuthForm(); clearAuthMsgs(); }
+
+function buildAuthForm(){
+  document.getElementById('at-reg').classList.toggle('on',authMode==='register');
+  document.getElementById('at-login').classList.toggle('on',authMode==='login');
+  document.getElementById('ah-title').textContent=authMode==='register'?'Create Account':'Welcome Back';
+  document.getElementById('ah-sub').textContent=authMode==='register'?'Join FaST AID — real account, syncs everywhere':'Sign in to your FaST AID account';
+  const f=document.getElementById('auth-form');
+  const flink=document.getElementById('forgot-link');
+  if(flink)flink.style.display=authMode==='login'?'block':'none';
+  if(authMode==='register'){
+    f.innerHTML=`
+      <div class="fg"><label>Full Name</label><input type="text" id="rn" placeholder="Your full name" autocomplete="name"></div>
+      <div class="fg"><label>Email Address</label><input type="email" id="re" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="fg"><label>Password</label><div class="pwd-toggle">
+        <input type="password" id="rp" placeholder="At least 6 characters" autocomplete="new-password">
+        <button type="button" class="pwd-eye" onclick="togglePwd('rp',this)">👁️</button>
+      </div></div>
+      <button class="auth-submit" id="reg-btn" onclick="doRegister()">Create Account →</button>
+      <p class="auth-alt" style="margin-top:10px;">Already have an account? <a onclick="switchAuth('login')">Sign in</a></p>`;
+  } else {
+    f.innerHTML=`
+      <div class="fg"><label>Email Address</label><input type="email" id="le" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="fg"><label>Password</label><div class="pwd-toggle">
+        <input type="password" id="lp" placeholder="Your password" autocomplete="current-password">
+        <button type="button" class="pwd-eye" onclick="togglePwd('lp',this)">👁️</button>
+      </div></div>
+      <button class="auth-submit" id="login-btn" onclick="doLogin()">Sign In →</button>
+      <p class="auth-alt" style="margin-top:10px;">New here? <a onclick="switchAuth('register')">Create account</a></p>`;
+  }
+}
+
+function togglePwd(id,btn){ const inp=document.getElementById(id); if(!inp)return; inp.type=inp.type==='password'?'text':'password'; btn.textContent=inp.type==='password'?'👁️':'🙈'; }
+
+// ── REGISTER ──
+async function doRegister(){
+  clearAuthMsgs();
+  const n=document.getElementById('rn')?.value.trim();
+  const e=document.getElementById('re')?.value.trim();
+  const p=document.getElementById('rp')?.value;
+  if(!n||!e||!p){showAuthError('Please fill in all fields.');return;}
+  if(p.length<6){showAuthError('Password must be at least 6 characters.');return;}
+  if(!/\S+@\S+\.\S+/.test(e)){showAuthError('Please enter a valid email address.');return;}
+  const btn=document.getElementById('reg-btn'); if(btn)btn._orig='Create Account →';
+  setAuthLoading(btn,true);
+
+  if(FIREBASE_ACTIVE){
+    try{
+      const cred=await auth.createUserWithEmailAndPassword(e,p);
+      await cred.user.updateProfile({displayName:n});
+      await cred.user.sendEmailVerification();
+      // Save to Firestore
+      await db.collection('users').doc(cred.user.uid).set({
+        name:n, email:e,
+        joined:new Date().toISOString(),
+        guidesViewed:0, guidesSaved:0,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // Send welcome email via EmailJS
+      if(EMAILJS_ACTIVE){ emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.welcomeTemplate,{to_name:n,to_email:e,app_name:'FaST AID'}).catch(()=>{}); }
+      document.getElementById('auth-modal').classList.remove('on');
+      document.getElementById('verify-banner').classList.add('show');
+      toast2('Account created! Check your email to verify. 📧');
+    } catch(err){
+      setAuthLoading(btn,false);
+      showAuthError(fbErrMsg(err.code));
+    }
+  } else {
+    // Fallback: localStorage
+    let users=JSON.parse(localStorage.getItem('fau')||'[]');
+    if(users.find(u=>u.email===e)){showAuthError('Email already registered.');setAuthLoading(btn,false);return;}
+    users.push({name:n,email:e,pass:p,joined:new Date().toLocaleDateString()});
+    localStorage.setItem('fau',JSON.stringify(users));
+    ST.user={name:n,email:e,joined:new Date().toLocaleDateString(),uid:'local_'+Date.now()};
+    save(); uui();
+    document.getElementById('auth-modal').classList.remove('on');
+    toast2('Welcome to FaST AID, '+n+'! 🎉 (Add Firebase for real accounts)');
+    setAuthLoading(btn,false);
+  }
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  clearAuthMsgs();
+  const e=document.getElementById('le')?.value.trim();
+  const p=document.getElementById('lp')?.value;
+  if(!e||!p){showAuthError('Please fill in all fields.');return;}
+  const btn=document.getElementById('login-btn'); if(btn)btn._orig='Sign In →';
+  setAuthLoading(btn,true);
+
+  if(FIREBASE_ACTIVE){
+    try{
+      const cred=await auth.signInWithEmailAndPassword(e,p);
+      // Load Firestore user data
+      const doc=await db.collection('users').doc(cred.user.uid).get();
+      const userData=doc.exists?doc.data():{};
+      ST.user={name:cred.user.displayName||userData.name||e.split('@')[0], email:e, uid:cred.user.uid, joined:userData.joined||new Date().toISOString(), emailVerified:cred.user.emailVerified};
+      // Load saved guides from Firestore
+      const savedSnap=await db.collection('users').doc(cred.user.uid).collection('saved').get();
+      ST.saved=savedSnap.docs.map(d=>d.data());
+      save(); uui();
+      document.getElementById('auth-modal').classList.remove('on');
+      if(!cred.user.emailVerified){ document.getElementById('verify-banner').classList.add('show'); }
+      toast2('Welcome back, '+ST.user.name+'! 👋');
+    } catch(err){
+      setAuthLoading(btn,false);
+      showAuthError(fbErrMsg(err.code));
+    }
+  } else {
+    let users=JSON.parse(localStorage.getItem('fau')||'[]');
+    const u=users.find(x=>x.email===e&&x.pass===p);
+    if(!u){showAuthError('Invalid email or password.');setAuthLoading(btn,false);return;}
+    ST.user={name:u.name,email:u.email,joined:u.joined,uid:'local_'+e};
+    save(); uui();
+    document.getElementById('auth-modal').classList.remove('on');
+    toast2('Welcome back, '+u.name+'! 👋');
+  }
+}
+
+// ── GOOGLE SIGN IN ──
+async function signInGoogle(){
+  if(FIREBASE_ACTIVE){
+    try{
+      const provider=new firebase.auth.GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      const cred=await auth.signInWithPopup(provider);
+      const u=cred.user;
+      // Save/update Firestore
+      await db.collection('users').doc(u.uid).set({
+        name:u.displayName, email:u.email, photoURL:u.photoURL||'',
+        joined:new Date().toISOString(), provider:'google'
+      },{merge:true});
+      if(EMAILJS_ACTIVE&&cred.additionalUserInfo?.isNewUser){
+        emailjs.send(EMAILJS_CONFIG.serviceId,EMAILJS_CONFIG.welcomeTemplate,{to_name:u.displayName,to_email:u.email,app_name:'FaST AID'}).catch(()=>{});
+      }
+      ST.user={name:u.displayName,email:u.email,uid:u.uid,provider:'google',photoURL:u.photoURL||''};
+      save(); uui();
+      document.getElementById('auth-modal').classList.remove('on');
+      toast2('Signed in with Google ✅');
+    } catch(err){ showAuthError(fbErrMsg(err.code)); }
+  } else {
+    // Demo mode Google
+    ST.user={name:'Google User',email:'google.demo@gmail.com',uid:'google_demo',provider:'google',joined:new Date().toLocaleDateString()};
+    save(); uui();
+    document.getElementById('auth-modal').classList.remove('on');
+    toast2('Signed in with Google (demo) ✅ — Add Firebase for real Google auth');
+  }
+}
+
+// ── FORGOT PASSWORD ──
+async function forgotPassword(){
+  clearAuthMsgs();
+  const e=document.getElementById('le')?.value.trim();
+  if(!e){showAuthError('Enter your email address above first.');return;}
+  if(FIREBASE_ACTIVE){
+    try{
+      await auth.sendPasswordResetEmail(e);
+      showAuthSuccess('Password reset email sent! Check your inbox. 📧');
+    } catch(err){ showAuthError(fbErrMsg(err.code)); }
+  } else {
+    showAuthSuccess('(Demo mode) In production, a reset email would be sent to '+e);
+  }
+}
+
+// ── RESEND VERIFICATION ──
+async function resendVerify(){
+  if(FIREBASE_ACTIVE&&auth.currentUser){
+    try{ await auth.currentUser.sendEmailVerification(); toast2('Verification email resent 📧'); }
+    catch(e){ toast2('Please wait before requesting another email.'); }
+  }
+}
+
+// ── LOGOUT ──
+async function doLogout(){
+  if(FIREBASE_ACTIVE&&auth.currentUser){ try{ await auth.signOut(); }catch(e){} }
+  ST.user=null; save(); uui();
+  toast2('Signed out successfully');
+  sv('home');
+}
+
+function needAuth(view){ if(!ST.user){openAuth('login');toast2('Please sign in first');}else{sv(view);} }
+
+// ── FIREBASE AUTH STATE LISTENER ──
+// Auto-detects if user is already logged in when page loads
+if(FIREBASE_ACTIVE){
+  auth.onAuthStateChanged(async (firebaseUser)=>{
+    if(firebaseUser && !ST.user){
+      const doc=await db.collection('users').doc(firebaseUser.uid).get().catch(()=>null);
+      const data=doc&&doc.exists?doc.data():{};
+      ST.user={
+        name:firebaseUser.displayName||data.name||firebaseUser.email.split('@')[0],
+        email:firebaseUser.email, uid:firebaseUser.uid,
+        emailVerified:firebaseUser.emailVerified,
+        photoURL:firebaseUser.photoURL||data.photoURL||''
+      };
+      if(!firebaseUser.emailVerified){ document.getElementById('verify-banner').classList.add('show'); }
+      save(); uui();
+      toast2('Welcome back, '+ST.user.name+'! 👋');
+    } else if(!firebaseUser && ST.user && ST.user.uid && !ST.user.uid.startsWith('local_')){
+      // Firebase says no user but we have one — clear it
+      ST.user=null; save(); uui();
+    }
+  });
+}
+
+// ── FIRESTORE SAVE/SYNC ──
+async function syncSavedToFirestore(){
+  if(!FIREBASE_ACTIVE||!ST.user?.uid||ST.user.uid.startsWith('local_'))return;
+  try{
+    const batch=db.batch();
+    const ref=db.collection('users').doc(ST.user.uid).collection('saved');
+    ST.saved.forEach(g=>{
+      batch.set(ref.doc(String(g.id)),{id:g.id,title:g.title,tag:g.tag,savedAt:new Date().toISOString()});
+    });
+    await batch.commit();
+  }catch(e){ console.warn('Firestore sync error:',e); }
+}
+
+// ── EMAIL NOTIFICATION: Guide Saved ──
+async function sendSaveNotification(guide){
+  if(!EMAILJS_ACTIVE||!ST.user?.email)return;
+  try{
+    await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.notifyTemplate,{
+      to_name:ST.user.name, to_email:ST.user.email,
+      guide_title:guide.title, guide_tag:guide.tag,
+      app_name:'FaST AID', action:'saved a guide'
+    });
+  }catch(e){ console.warn('EmailJS notification error:',e); }
+}
+
+// ── FIREBASE ERROR MESSAGES (human-readable) ──
+function fbErrMsg(code){
+  const msgs={
+    'auth/email-already-in-use':'This email is already registered. Try logging in.',
+    'auth/invalid-email':'Please enter a valid email address.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/wrong-password':'Incorrect password. Try again or reset it.',
+    'auth/user-not-found':'No account found with this email. Please register.',
+    'auth/too-many-requests':'Too many attempts. Please wait a few minutes.',
+    'auth/network-request-failed':'Network error. Check your internet connection.',
+    'auth/popup-closed-by-user':'Google sign-in was cancelled.',
+    'auth/invalid-credential':'Invalid credentials. Please check and try again.',
+  };
+  return msgs[code]||'Something went wrong. Please try again.';
+}
+
+function uui(){
+  const u=ST.user;
+  const init=u?u.name.charAt(0).toUpperCase():'';
+
+  // ── Nav profile icon (always visible) ──
+  const av=document.getElementById('nav-av');
+  const avIcon=document.getElementById('nav-av-icon');
+  const avInit=document.getElementById('nav-av-init');
+  if(u){
+    av.classList.add('logged-in');
+    avIcon.style.display='none';
+    avInit.style.display='block';
+    avInit.textContent=init;
+  } else {
+    av.classList.remove('logged-in');
+    avIcon.style.display='block';
+    avInit.style.display='none';
+  }
+
+  // ── Profile dropdown ──
+  document.getElementById('pd-av').textContent=u?init:'👤';
+  document.getElementById('pd-nm').textContent=u?u.name:'Welcome!';
+  document.getElementById('pd-em').textContent=u?u.email:'Sign in to unlock all features';
+  const pdGuest=document.getElementById('pd-guest');
+  const pdUser=document.getElementById('pd-user');
+  if(pdGuest)pdGuest.style.display=u?'none':'block';
+  if(pdUser)pdUser.style.display=u?'block':'none';
+
+  // ── Mobile drawer ──
+  document.getElementById('dp-av').textContent=u?init:'?';
+  document.getElementById('dp-name').textContent=u?u.name:'Guest User';
+  document.getElementById('dp-email').textContent=u?u.email:'';
+  const dpSignin=document.getElementById('dp-signin');
+  if(dpSignin)dpSignin.style.display=u?'none':'block';
+  const dmReg=document.getElementById('dm-reg');
+  const dmLogin=document.getElementById('dm-login');
+  const dmLogout=document.getElementById('dm-logout');
+  const dmProfile=document.getElementById('dm-profile');
+  if(dmReg)dmReg.style.display=u?'none':'';
+  if(dmLogin)dmLogin.style.display=u?'none':'';
+  if(dmLogout)dmLogout.style.display=u?'':'none';
+  if(dmProfile)dmProfile.style.display=u?'':'none';
+
+  // ── Dashboard auth wall ──
+  const wall=document.getElementById('dash-authwall');
+  const content=document.getElementById('dash-content');
+  if(wall)wall.style.display=u?'none':'block';
+  if(content)content.style.display=u?'block':'none';
+
+  // ── Hero guide count ──
+  const hg=document.getElementById('hs-guides');
+  if(hg)hg.textContent=GUIDES.length+'+';
+}
+
+// ===== OFFLINE MODE =====
+let offlineMode=false, dashFilter='All', dashOffline=false;
+
+function setMode(mode){
+  offlineMode=mode==='offline';
+  document.getElementById('mtab-online').classList.toggle('on',!offlineMode);
+  document.getElementById('mtab-offline').classList.toggle('on',offlineMode);
+  document.getElementById('mtab-offline').classList.toggle('offline-on',offlineMode);
+  const notice=document.getElementById('offline-notice');
+  notice.classList.toggle('show',offlineMode);
+  renderGuides();
+  // Update status badge
+  const cs=document.getElementById('conn-status');
+  cs.textContent=offlineMode?'Offline Mode':'Connected';
+}
+
+function setDMode(mode){
+  dashOffline=mode==='offline';
+  document.getElementById('dmtab-online').classList.toggle('on',!dashOffline);
+  document.getElementById('dmtab-offline').classList.toggle('on',dashOffline);
+  document.getElementById('dmtab-offline').classList.toggle('offline-on',dashOffline);
+  renderDash();
+}
+
+// ===== RECENTLY VIEWED ON HOME =====
+function refreshHomeRecent(){
+  const wrap=document.getElementById('home-recent-wrap');
+  const grid=document.getElementById('home-recent-grid');
+  if(!wrap||!grid)return;
+  wrap.style.display='block'; // always show
+  if(!ST.viewed.length){
+    grid.innerHTML=`<div style="background:#fff;border:1.5px dashed var(--border);border-radius:14px;padding:40px 24px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">📋</div>
+      <div style="font-family:'Source Serif 4',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">No guides viewed yet</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto;line-height:1.6;">Open any first aid guide to see it here for quick access next time.</div>
+      <button class="btn-guide" onclick="sv('guides')" style="padding:11px 24px;font-size:14px;width:auto;display:inline-flex;">📋 Browse First Aid Guides</button>
+    </div>`;
+    return;
+  }
+  const recent=ST.viewed.slice(0,6);
+  grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">`+recent.map(v=>{
+    const g=GUIDES.find(x=>x.id===v.id);
+    if(!g)return '';
+    return `<div class="gcard" style="padding:16px;gap:8px;cursor:pointer;" onclick="openGuide(${g.id})">
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="font-size:20px;flex-shrink:0;">${CAT_ICONS[g.tag]||'📋'}</span>
+        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text);line-height:1.3;">${g.title}</div>
+        ${g.urgent?'<span style="font-size:12px;flex-shrink:0;margin-left:auto;">🚨</span>':''}
+      </div>
+      <div style="font-size:11px;color:var(--muted);">⏱️ ${g.time}</div>
+      <div style="font-size:11px;color:var(--muted);">Viewed: ${v.date||'recently'}</div>
+      <button class="btn-open${g.urgent?' urgent':''}" style="padding:9px;font-size:13px;" onclick="event.stopPropagation();openGuide(${g.id})">Open Guide</button>
+    </div>`;
+  }).join('')+`</div>`;
+}
+
+// ===== DASHBOARD FULL LIBRARY =====
+function rdash(){
+  const u=ST.user;
+  document.getElementById('dsh-greet').textContent=u?'Welcome back, '+u.name+' 📚':'First Aid Library 📚';
+  document.getElementById('ds1').textContent=ST.viewed.length;
+  document.getElementById('ds2').textContent=ST.saved.length;
+  document.getElementById('ds3').textContent=ST.searches;
+  document.getElementById('ds4').textContent=ST.days.length;
+  renderDash();
+  const sg=document.getElementById('d-saved');
+  if(!ST.saved.length){sg.innerHTML='<div style="text-align:center;padding:18px;color:var(--muted);font-size:13px;">No saved guides yet. Open any guide and click 🔖 Save.</div>';}
+  else{sg.innerHTML=ST.saved.slice(0,8).map(v=>`<div class="hist-item"><div class="hi-dot">🔖</div><div class="hi-inf"><div class="hi-t">${v.title}</div><span class="hi-tag">${v.tag}</span></div><button class="btn-open-sm" onclick="openGuide(${v.id})">Open</button></div>`).join('');}
+  document.getElementById('d-tip').textContent=TIPS[Math.floor(Math.random()*TIPS.length)];
+}
+
+function setDF(cat,el){
+  dashFilter=cat;
+  document.querySelectorAll('#d-ftabs .ftab').forEach(f=>f.classList.remove('on'));
+  if(el)el.classList.add('on');
+  if(document.getElementById('dcat-filter'))document.getElementById('dcat-filter').value=cat==='All'?'All':cat;
+  renderDash();
+}
+
+function renderDash(){
+  const qEl=document.getElementById('dsinput');
+  const q=qEl?qEl.value.toLowerCase():'';
+  const catSel=document.getElementById('dcat-filter');
+  const urgSel=document.getElementById('durg-filter');
+  const cat=catSel?catSel.value:'All';
+  const urg=urgSel?urgSel.value:'All';
+  // Sync filter
+  if(cat!=='All'&&cat!==dashFilter){dashFilter=cat;}
+  let list=GUIDES;
+  if(dashFilter!=='All')list=list.filter(g=>g.tag===dashFilter);
+  if(cat!=='All')list=list.filter(g=>g.tag===cat);
+  if(urg==='urgent')list=list.filter(g=>g.urgent);
+  if(urg==='saved')list=list.filter(g=>ST.saved.some(s=>s.id===g.id));
+  if(q)list=list.filter(g=>g.title.toLowerCase().includes(q)||g.desc.toLowerCase().includes(q)||g.tag.toLowerCase().includes(q));
+  const cnt=document.getElementById('d-guide-count');
+  if(cnt)cnt.textContent='Showing '+list.length+' of '+GUIDES.length+' guides';
+  const grid=document.getElementById('d-ggrid');
+  if(!grid)return;
+  if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted);"><div style="font-size:40px;margin-bottom:10px;">🔍</div><p>No guides match your search.</p></div>';return;}
+  const offCls=dashOffline?' offline-card':'';
+  grid.innerHTML=list.map(g=>`
+    <div class="gcard${offCls}">
+      <div class="gc-top">
+        <div class="gc-title">${g.title}</div>
+        ${g.urgent?'<div class="gc-urgent">🚨</div>':''}
+      </div>
+      <div class="gc-time">⏱️ ${g.time}</div>
+      <div class="gc-desc">${g.desc}</div>
+      <div class="gc-tags">
+        <span class="gc-tag ${g.tc}">${CAT_ICONS[g.tag]||''} ${g.tag}</span>
+        ${ST.saved.some(s=>s.id===g.id)?'<span style="font-size:11px;padding:3px 8px;border-radius:99px;background:#fef3c7;color:#d97706;font-weight:600;">🔖 Saved</span>':''}
+        ${dashOffline?'<span style="font-size:11px;padding:3px 8px;border-radius:99px;background:#1e293b;color:#4ade80;font-weight:600;">📴 Offline</span>':''}
+      </div>
+      <button class="btn-open${g.urgent?' urgent':''}" onclick="openGuide(${g.id})">Open Guide</button>
+    </div>`).join('');
+}
+
+function setFbyName(c){
+  curFilter=c;
+  document.querySelectorAll('.ftab').forEach(f=>f.classList.toggle('on',f.textContent.trim().includes(c)));
+  renderGuides();
+}
+
+// ===== PROFILE =====
+function rprof(){
+  const u=ST.user;
+  if(!u){sv('home');openAuth('login');return;}
+  const init=u.name.charAt(0).toUpperCase();
+  document.getElementById('pav').textContent=init;
+  document.getElementById('p-name').textContent=u.name;
+  document.getElementById('p-email').textContent=u.email;
+  document.getElementById('p-joined').textContent=u.joined?'Member since '+u.joined:'';
+  document.getElementById('pp1').textContent=ST.viewed.length;
+  document.getElementById('pp2').textContent=ST.saved.length;
+  document.getElementById('pp3').textContent=ST.searches;
+  document.getElementById('pp4').textContent=ST.days.length;
+  const pa=document.getElementById('prof-actions');
+  pa.innerHTML=`
+    <button class="prof-btn" onclick="toast2('Edit profile coming soon')">✏️ Edit Profile</button>
+    <button class="prof-btn" onclick="toast2('Notifications — add EmailJS to enable')">🔔 Email Notifications</button>
+    ${FIREBASE_ACTIVE&&u.emailVerified===false?'<button class="prof-btn" style="color:#d97706;border-color:#fde68a;" onclick="resendVerify()">📧 Verify Email</button>':''}
+    <button class="prof-btn danger" onclick="doLogout()">🚪 Sign Out</button>
+  `;
+  // Firebase status card
+  const fbt=document.getElementById('fb-setup-title');
+  const fbd=document.getElementById('fb-setup-text');
+  if(fbt&&fbd){
+    if(FIREBASE_ACTIVE){
+      fbt.innerHTML='🔥 Firebase — <span style="color:var(--g)">Connected</span>';
+      fbd.innerHTML=`Real accounts active · Data syncs across devices · <strong>${u.emailVerified?'✅ Email verified':'⚠️ Email not verified'}</strong>`;
+    } else {
+      fbt.innerHTML='⚙️ Firebase — <span style="color:#d97706">Demo Mode</span>';
+      fbd.innerHTML=`Data stored locally only. To enable real accounts:<br>
+        1. Create project at <a href="https://console.firebase.google.com" target="_blank" style="color:var(--g)">console.firebase.google.com</a><br>
+        2. Add your <code style="background:var(--border);padding:1px 5px;border-radius:4px;">firebaseConfig</code> in the HTML<br>
+        3. Enable Authentication + Firestore<br>
+        4. Redeploy to GitHub Pages`;
+    }
+  }
+  const ps=document.getElementById('p-saved');
+  if(!ST.saved.length){ps.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">No saved guides yet.</div>';}
+  else{ps.innerHTML=ST.saved.slice(0,5).map(v=>`<div class="hist-item"><div class="hi-dot">🔖</div><div class="hi-inf"><div class="hi-t">${v.title}</div><span class="hi-tag">${v.tag}</span></div><button class="btn-open-sm" onclick="openGuide(${v.id})">Open</button></div>`).join('');}
+  const pv=document.getElementById('p-viewed');
+  if(!ST.viewed.length){pv.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">No guides viewed yet.</div>';}
+  else{pv.innerHTML=ST.viewed.slice(0,5).map(v=>`<div class="hist-item"><div class="hi-dot">${CAT_ICONS[v.tag]||'📋'}</div><div class="hi-inf"><div class="hi-t">${v.title}</div><div class="hi-d">${v.date||''}</div></div><button class="btn-open-sm" onclick="openGuide(${v.id})">Open</button></div>`).join('');}
+}
+
+// ===== GUIDED AID =====
+function startGuided(){
+  const opts=[
+    {l:'🩸 Severe Bleeding',id:1},{l:'🔥 Burn',id:4},{l:'😮 Choking',id:12},
+    {l:'❤️ Cardiac Arrest / No Pulse',id:8},{l:'🧠 Stroke',id:11},
+    {l:'🦴 Fracture / Fall',id:15},{l:'☠️ Poisoning / Overdose',id:18},
+    {l:'💉 Severe Allergic Reaction',id:22},{l:'🌡️ Heatstroke',id:27},
+    {l:'🌊 Drowning',id:30},{l:'⚡ Electric Shock',id:38},{l:'🐍 Snake Bite',id:25},
+  ];
+  document.getElementById('guided-body').innerHTML=`<p style="font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text);">What is the main emergency?</p><div style="display:flex;flex-direction:column;gap:7px;">${opts.map((o,i)=>`<button class="guided-opt" onclick="guidedSel(${o.id})">${o.l}</button>`).join('')}</div>`;
+  document.getElementById('guided-foot').innerHTML='<button style="padding:10px 18px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:\'DM Sans\',sans-serif;font-size:13px;" onclick="document.getElementById(\'guided-modal\').classList.remove(\'on\')">Cancel</button>';
+  document.getElementById('guided-modal').classList.add('on');
+}
+function guidedSel(id){document.getElementById('guided-modal').classList.remove('on');openGuide(id);}
+function closeGuidedOv(e){if(e.target===document.getElementById('guided-modal'))document.getElementById('guided-modal').classList.remove('on');}
+
+// ===== GUIDES PAGE =====
+let g2Filter='All', g2Offline=false;
+
+function setGMode(mode){
+  g2Offline=mode==='offline';
+  document.getElementById('g2-online').classList.toggle('on',!g2Offline);
+  document.getElementById('g2-offline').classList.toggle('on',g2Offline);
+  document.getElementById('g2-offline').classList.toggle('offline-on',g2Offline);
+  renderGuidesPage();
+}
+
+function setG2F(cat,el){
+  g2Filter=cat;
+  document.querySelectorAll('#g2-ftabs .ftab').forEach(f=>f.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderGuidesPage();
+}
+
+function renderGuidesPage(){
+  const qEl=document.getElementById('g2-search');
+  const q=qEl?qEl.value.toLowerCase():'';
+  let list=GUIDES;
+  if(g2Filter!=='All')list=list.filter(g=>g.tag===g2Filter);
+  if(q)list=list.filter(g=>g.title.toLowerCase().includes(q)||g.desc.toLowerCase().includes(q)||g.tag.toLowerCase().includes(q));
+  const cnt=document.getElementById('g2-count');
+  if(cnt)cnt.textContent='Showing '+list.length+' of '+GUIDES.length+' guides';
+  const grid=document.getElementById('g2-grid');
+  if(!grid)return;
+  if(!list.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);"><div style="font-size:44px;margin-bottom:12px;">🔍</div><p style="font-size:15px;">No guides match your search. Try a different term.</p></div>';
+    return;
+  }
+  const offCls=g2Offline?' offline-card':'';
+  grid.innerHTML=list.map(g=>`
+    <div class="gcard${offCls}">
+      <div class="gc-top">
+        <div class="gc-title">${g.title}</div>
+        ${g.urgent?'<div class="gc-urgent">🚨</div>':''}
+      </div>
+      <div class="gc-time">⏱️ ${g.time}</div>
+      <div class="gc-desc">${g.desc}</div>
+      <div class="gc-tags">
+        <span class="gc-tag ${g.tc}">${CAT_ICONS[g.tag]||''} ${g.tag}</span>
+        ${ST.saved.some(s=>s.id===g.id)?'<span style="font-size:11px;padding:3px 8px;border-radius:99px;background:#fef3c7;color:#d97706;font-weight:600;">🔖</span>':''}
+        ${g2Offline?'<span style="font-size:11px;padding:3px 8px;border-radius:99px;background:#1e293b;color:#4ade80;font-weight:600;">📴</span>':''}
+      </div>
+      <button class="btn-open${g.urgent?' urgent':''}" onclick="openGuide(${g.id})">Open Guide</button>
+    </div>`).join('');
+}
+
+// ===== UTILS =====
+function call911(){window.location.href='tel:911';toast2('📞 Calling 911...');}
+function findClinic(){toast2('Opening Google Maps...');setTimeout(()=>window.open('https://www.google.com/maps/search/hospital+clinic+near+me','_blank'),600);}
+function toast2(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3200);}
+
+// ===== INIT =====
+uui();renderGuides();renderGuidesPage();refreshHomeRecent();
+// Check connection
+if(!navigator.onLine){setMode('offline');setGMode('offline');}
+window.addEventListener('online',()=>{setMode('online');setGMode('online');});
+window.addEventListener('offline',()=>{setMode('offline');setGMode('offline');});
+</script>
+</body>
+</html>
